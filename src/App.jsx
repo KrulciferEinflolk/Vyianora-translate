@@ -47,13 +47,11 @@ function App() {
                     } else {
                         setUser(currentUser);
                         setIsAuthorized(false);
-                        setAuthError("Tu correo no está en la lista de colaboradores autorizados. Llama al arquitecto.");
-                        // Optionally sign out unauthorized users
-                        await signOut(auth);
+                        setAuthError(`El correo ${currentUser.email} no está autorizado. Pide permiso al administrador.`);
                     }
                 } catch (err) {
                     console.error("Error verificando autorización:", err);
-                    setAuthError("Error de conexión con la base de datos de seguridad.");
+                    setAuthError("Error de conexión. Reintentando...");
                     setIsAuthorized(false);
                 }
             } else {
@@ -128,7 +126,7 @@ function App() {
     }
 
     if (!user || !isAuthorized) {
-        return <LoginScreen error={authError} />;
+        return <LoginScreen error={authError} user={user} />;
     }
 
     return (

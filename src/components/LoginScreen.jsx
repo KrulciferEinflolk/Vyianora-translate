@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth, googleProvider } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
-import { Shield, Sparkles, LogIn } from 'lucide-react';
+import { signInWithPopup, signOut } from 'firebase/auth';
+import { Shield, Sparkles, LogIn, LogOut } from 'lucide-react';
 
 export default function LoginScreen({ error: externalError }) {
     const [loading, setLoading] = useState(false);
