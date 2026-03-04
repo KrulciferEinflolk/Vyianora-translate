@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { Plus, Send, RefreshCw, Trash2, MessageSquare } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc } from "firebase/firestore";
 

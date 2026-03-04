@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+import { Plus, Trash2, Layers } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
 

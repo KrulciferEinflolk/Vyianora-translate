@@ -1,3 +1,6 @@
+import React, { useState, useEffect } from 'react';
+import VyianjiCanvas from './VyianjiCanvas';
+import { Save, RefreshCw, Plus } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc } from "firebase/firestore";
 
