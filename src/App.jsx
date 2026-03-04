@@ -164,7 +164,10 @@ function App() {
                         <Download size={18} className="group-hover:bounce" />
                         Exportar
                     </button>
+                </div>
 
+                {/* Profile Corner Menu */}
+                <div className="absolute top-6 right-10">
                     <div className="relative">
                         <button
                             onClick={() => setShowUserMenu(!showUserMenu)}
