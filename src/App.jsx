@@ -131,7 +131,31 @@ function App() {
     }
 
     return (
-        <div className="min-h-screen animate-fade-in">
+        <div className="min-h-screen animate-fade-in relative">
+            {/* Floating Profile Corner */}
+            <div className="fixed top-6 right-6 z-[100]">
+                <div className="relative group">
+                    <button
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        className={`w-16 h-16 rounded-2xl border-2 transition-all duration-300 overflow-hidden shadow-2xl
+                            ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-105' : 'border-white/20 hover:border-primary/50'}`}
+                    >
+                        <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                    </button>
+
+                    {showUserMenu && (
+                        <div className="absolute top-[calc(100%+12px)] right-0 flex items-center bg-black/90 backdrop-blur-3xl border border-white/10 py-3 px-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 min-w-[140px]">
+                            <button
+                                onClick={() => signOut(auth)}
+                                className="w-full text-xs uppercase tracking-[0.2em] font-black text-red-400 hover:text-red-300 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <LogOut size={16} />
+                                Salir
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
             {/* Header / Nav */}
             <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col xl:flex-row justify-between items-center gap-6 sticky top-4 z-50 relative">
                 <div className="flex items-center gap-4">
@@ -164,31 +188,6 @@ function App() {
                         <Download size={18} className="group-hover:bounce" />
                         Exportar
                     </button>
-                </div>
-
-                {/* Profile Corner Menu */}
-                <div className="absolute top-2 right-2">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowUserMenu(!showUserMenu)}
-                            className={`w-14 h-14 rounded-2xl border-2 transition-all duration-300 overflow-hidden shadow-xl
-                                ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-105' : 'border-white/10 hover:border-primary/40'}`}
-                        >
-                            <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
-                        </button>
-
-                        {showUserMenu && (
-                            <div className="absolute top-[calc(100%+12px)] right-0 flex items-center bg-black/80 backdrop-blur-2xl border border-white/10 py-3 px-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[101] min-w-[120px]">
-                                <button
-                                    onClick={() => signOut(auth)}
-                                    className="w-full text-xs uppercase tracking-[0.2em] font-black text-red-400 hover:text-red-300 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <LogOut size={14} />
-                                    Salir
-                                </button>
-                            </div>
-                        )}
-                    </div>
                 </div>
             </header>
             {/* ... rest of main content ... */}
