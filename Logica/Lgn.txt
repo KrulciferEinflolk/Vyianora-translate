@@ -1,0 +1,220 @@
+========================================
+BASE GENERATIVA DEL IDIOMA VYIANÓRA
+(SISTEMA PARA CREAR PALABRAS)
+========================================
+
+1. RAÍCES FUNDAMENTALES (NÚCLEOS)
+--------------------------------
+Todas las palabras nacen de raíces cortas (1–2 sílabas).
+Cada raíz representa un concepto puro.
+
+Ejemplos base:
+
+kai   = poder / energía interna
+shen  = emoción / voluntad
+ryo   = naturaleza / batalla
+zai   = superioridad / dominio
+mi    = yo / existencia propia
+ta    = otro / vínculo externo
+no    = vacío / ausencia
+ra    = flujo / movimiento
+kyu   = control / precisión
+
+REGLA:
+Toda palabra nueva debe partir de una raíz existente o combinación de ellas.
+
+----------------------------------------
+
+2. ESTRUCTURA DE PALABRAS
+-------------------------
+Formato general:
+
+[RAÍZ] + [MODIFICADOR] + [FUNCIÓN]
+
+Ejemplo:
+shen + zai = emoción dominante
+ryo + kai = poder de la naturaleza
+
+----------------------------------------
+
+3. MODIFICADORES (SUFIJOS Y PREFIJOS)
+-------------------------------------
+
+SUFIJOS (modifican significado):
+
+-ka   = colectivo / expansión
+-shi  = futuro / intención
+-ta   = pasado / acción completada
+-en   = estado interno
+-yo   = intensidad / énfasis
+-ra   = plural / multiplicidad
+-ne   = duda / inestabilidad
+-dor  = conflicto / ruptura
+
+Ejemplos:
+shenka = emociones colectivas
+zaita = dominó
+ryoshi = batalla futura
+shendor = conflicto emocional
+
+PREFIJOS:
+
+vy-   = perfección / superioridad absoluta
+no-   = negación / vacío
+kai-  = absorción / apropiación
+
+Ejemplos:
+vykai = poder supremo
+noryo = ausencia de batalla
+kaishen = absorber emociones
+
+----------------------------------------
+
+4. CREACIÓN DE PALABRAS
+------------------------
+
+REGLA BASE:
+
+1. Elige concepto principal (raíz)
+2. Añade modificador según intención
+3. Ajusta fonética (fluidez Vyio)
+
+Ejemplo:
+
+Concepto: "orgullo en batalla"
+
+ryo (batalla) + zai (dominio) + en (estado)
+→ ryozaien
+
+Concepto: "emoción futura intensa"
+
+shen + shi + yo
+→ shenshiyo
+
+----------------------------------------
+
+5. FONÉTICA APLICADA
+--------------------
+Reglas al formar palabras:
+
+- Máximo 3 sílabas idealmente
+- Evitar choques duros: (ej. "kt", "tsr")
+- Siempre terminar en vocal o "n"
+- Priorizar fluidez
+
+Corrección:
+shen + ta → shenta (correcto)
+shen + ryo → shenryo (aceptable)
+
+----------------------------------------
+
+6. SISTEMA TIPO KANJI (CONSTRUCCIÓN)
+------------------------------------
+
+Cada símbolo representa una raíz base.
+
+TÚ crearás los símbolos, pero sigue esta lógica:
+
+RAÍZ = símbolo base
+MODIFICADOR = marca adicional
+
+Ejemplo conceptual:
+
+[KAI] = poder
+[SHEN] = emoción
+
+Combinación:
+[KAI] + marca intensidad = poder elevado
+[SHEN] + marca conflicto = emoción rota
+
+REGLA:
+Un símbolo complejo = idea compuesta
+
+Ejemplo:
+RYO + ZAI = dominio de la naturaleza
+
+----------------------------------------
+
+7. TIPOS DE PALABRAS
+--------------------
+
+Sustantivos:
+raíz + en
+
+Ej:
+shen → emoción
+shenen → estado emocional
+
+Verbos:
+raíz base
+
+Ej:
+kai → absorber
+ryo → luchar
+
+Adjetivos:
+raíz + yo
+
+Ej:
+zaiyo → dominante
+shenyo → emocional intenso
+
+----------------------------------------
+
+8. FRASES GENERATIVAS
+--------------------
+
+Estructura:
+
+[Sujeto] + [Concepto] + [Acción]
+
+Ejemplo:
+
+Mi shenryo nara
+→ Yo enfrento emoción y batalla
+
+Ta vykai shen
+→ Tú tienes poder supremo emocional
+
+----------------------------------------
+
+9. CREACIÓN LIBRE CONTROLADA
+----------------------------
+
+Para expandir a 200 palabras:
+
+1. Define categoría:
+   - emoción
+   - guerra
+   - naturaleza
+   - jerarquía
+   - vínculo
+
+2. Usa raíces base
+3. Aplica modificadores
+4. Ajusta fonética
+5. Define significado simbólico
+
+----------------------------------------
+
+10. EJEMPLOS GENERADOS
+----------------------
+
+vyshenyo = emoción suprema intensa
+noshenta = ausencia de sentimiento pasado
+kairyo = absorber poder natural
+ryodoren = estado de conflicto en batalla
+zaiyoka = dominación colectiva
+
+----------------------------------------
+
+REGLA FINAL DEL VYIANÓRA
+----------------------------------------
+"Una palabra no describe… domina el concepto."
+
+Si una palabra suena débil o simple,
+no pertenece a Vyianóra.
+
+========================================
+FIN DE LA BASE GENERATIVA
+========================================

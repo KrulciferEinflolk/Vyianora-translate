@@ -1,0 +1,106 @@
+========================================
+PLANTILLA DE CREACIÓN DE PALABRAS VYIANÓRA
+========================================
+
+[1] CATEGORÍA
+-------------
+(Elige una)
+[ ] Emoción
+[ ] Guerra
+[ ] Naturaleza
+[ ] Jerarquía
+[ ] Vínculo
+[ ] Otra: ____________
+
+Concepto específico:
+→ ______________________________________
+
+Intención:
+(¿Qué quieres transmitir?)
+→ ______________________________________
+
+
+[2] RAÍCES BASE
+---------------
+Raíz principal:
+→ ____________   (significado: ____________________)
+
+Raíz secundaria (opcional):
+→ ____________   (significado: ____________________)
+
+Raíz terciaria (opcional):
+→ ____________   (significado: ____________________)
+
+
+[3] MODIFICADORES
+-----------------
+Prefijo(s):
+→ ____________   (significado: ____________________)
+
+Sufijo(s):
+→ ____________   (significado: ____________________)
+
+Tipo de modificación:
+[ ] Intensidad
+[ ] Tiempo (pasado / futuro)
+[ ] Estado interno
+[ ] Colectivo
+[ ] Conflicto
+[ ] Negación
+[ ] Otro: ____________
+
+
+[4] CONSTRUCCIÓN DE PALABRA
+---------------------------
+Combinación inicial:
+→ ______________________________________
+
+Ajuste fonético:
+(Reglas: fluidez, máximo 3 sílabas ideal, termina en vocal o "n")
+
+Versión final:
+→ ______________________________________
+
+
+[5] SIGNIFICADO FINAL
+--------------------
+Traducción literal:
+→ ______________________________________
+
+Significado simbólico:
+→ ______________________________________
+
+Uso en contexto:
+→ ______________________________________
+
+
+[6] VERSIÓN TIPO KANJI (CONCEPTUAL)
+----------------------------------
+Símbolos base usados:
+→ ______________________________________
+
+Relación entre símbolos:
+→ ______________________________________
+
+Idea visual sugerida:
+→ ______________________________________
+
+
+[7] EJEMPLO EN FRASE
+-------------------
+Frase en Vyio:
+→ ______________________________________
+
+Traducción:
+→ ______________________________________
+
+
+[8] NOTAS
+--------
+(Dudas, variantes, evolución futura)
+
+→ ______________________________________
+
+========================================
+FIN DE PLANTILLA
+========================================
