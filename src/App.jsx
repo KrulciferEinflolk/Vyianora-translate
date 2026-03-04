@@ -164,31 +164,30 @@ function App() {
                         <Download size={18} className="group-hover:bounce" />
                         Exportar
                     </button>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowUserMenu(!showUserMenu)}
+                            className={`w-14 h-14 rounded-2xl border-2 transition-all duration-300 overflow-hidden shadow-xl
+                                ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-105' : 'border-white/10 hover:border-primary/40'}`}
+                        >
+                            <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                        </button>
+
+                        {showUserMenu && (
+                            <div className="absolute top-[calc(100%+12px)] right-0 flex items-center bg-black/80 backdrop-blur-2xl border border-white/10 py-3 px-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-[101] min-w-[120px]">
+                                <button
+                                    onClick={() => signOut(auth)}
+                                    className="w-full text-xs uppercase tracking-[0.2em] font-black text-red-400 hover:text-red-300 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <LogOut size={14} />
+                                    Salir
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
-
-            {/* Profile Floating Menu */}
-            <div className="fixed top-8 right-8 z-[100] flex flex-col items-end">
-                <div className="relative flex items-center gap-3">
-                    {showUserMenu && (
-                        <div className="flex items-center bg-black/60 backdrop-blur-xl border border-white/10 py-2 px-4 rounded-full shadow-2xl animate-in fade-in slide-in-from-right-4 duration-300">
-                            <button
-                                onClick={() => signOut(auth)}
-                                className="text-[10px] uppercase tracking-[0.2em] font-black text-red-400 hover:text-red-300 transition-colors"
-                            >
-                                Salir
-                            </button>
-                        </div>
-                    )}
-                    <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className={`w-14 h-14 rounded-full border-2 transition-all duration-300 overflow-hidden shadow-xl
-                            ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-white/10 hover:border-primary/40'}`}
-                    >
-                        <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
-                    </button>
-                </div>
-            </div>
             {/* ... rest of main content ... */}
 
             {/* Main Content */}
