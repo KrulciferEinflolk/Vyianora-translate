@@ -211,37 +211,36 @@ function App() {
                 </div>
             </main>
 
-            {/* Floating Action Menu (Bottom-Right) */}
-            <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4">
+            {/* Floating Action Menu (Bottom-Right, Fixed to Viewport) */}
+            <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-center gap-4">
                 {showUserMenu && (
-                    <div className="flex flex-col gap-2 p-2 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+                    <div className="flex flex-col gap-2 p-2 bg-[#0a0a0c]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-10 duration-500 min-w-[200px]">
                         <button
                             onClick={() => { handleExport(); setShowUserMenu(false); }}
-                            className="flex items-center gap-3 w-full px-6 py-4 rounded-2xl bg-white/5 hover:bg-primary/20 hover:text-primary transition-all group overflow-hidden relative"
+                            className="flex items-center gap-3 w-full px-5 py-4 rounded-[2rem] bg-white/5 hover:bg-primary/20 hover:text-primary transition-all group active:scale-95"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            <Download size={20} className="relative z-10 group-hover:bounce" />
-                            <span className="text-xs uppercase tracking-[0.2em] font-black relative z-10">Exportar Datos</span>
+                            <Download size={18} className="group-hover:bounce" />
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-black">Exportar Datos</span>
                         </button>
 
-                        <div className="h-[1px] bg-white/5 mx-4"></div>
+                        <div className="h-[1px] bg-white/5 mx-6"></div>
 
                         <button
                             onClick={handleSignOut}
-                            className="flex items-center gap-3 w-full px-6 py-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-all group"
+                            className="flex items-center gap-3 w-full px-5 py-4 rounded-[2rem] bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-all group active:scale-95"
                         >
-                            <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-                            <span className="text-xs uppercase tracking-[0.2em] font-black">Cerrar Sesión</span>
+                            <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
+                            <span className="text-[10px] uppercase tracking-[0.2em] font-black">Cerrar Sesión</span>
                         </button>
                     </div>
                 )}
 
                 <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className={`w-16 h-16 rounded-2xl border-2 transition-all duration-500 overflow-hidden shadow-2xl hover:shadow-primary/20
-                        ${showUserMenu ? 'border-primary ring-4 ring-primary/20 rotate-0 scale-110' : 'border-white/10 hover:border-primary/40 -rotate-3 hover:rotate-0'}`}
+                    className={`w-16 h-16 rounded-full border-2 transition-all duration-500 overflow-hidden shadow-2xl hover:shadow-primary/40 active:scale-90
+                        ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-white/10 hover:border-primary/60'}`}
                 >
-                    <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                    <img src={user.photoURL} alt="User" className="w-full h-full object-cover rounded-full" />
                 </button>
             </div>
         </div>
