@@ -3,9 +3,10 @@ import LexiconManager from './components/LexiconManager';
 import WordGenerator from './components/WordGenerator';
 import PhraseGenerator from './components/PhraseGenerator';
 import VyianjiCanvas from './components/VyianjiCanvas';
-import { Download, Plus, Search, Book, PenTool, Database, Layers, MessageSquare, Library, Trash2 } from 'lucide-react';
+import { Download, Plus, Search, Book, PenTool, Database, Layers, MessageSquare, Library, Trash2, LogOut } from 'lucide-react';
 import { exportToExcel } from './utils/ExcelExporter';
-import { db } from './firebase';
+import { auth, db } from './firebase';
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
     collection,
     onSnapshot,
@@ -13,10 +14,17 @@ import {
     deleteDoc,
     doc,
     query,
-    orderBy
+    orderBy,
+    getDoc
 } from "firebase/firestore";
+import LoginScreen from './components/LoginScreen';
 
 function App() {
+    const [user, setUser] = useState(null);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [authError, setAuthError] = useState(null);
+
     const [activeTab, setActiveTab] = useState('lexicon');
     const [roots, setRoots] = useState([]);
     const [prefixes, setPrefixes] = useState([]);
@@ -24,8 +32,53 @@ function App() {
     const [words, setWords] = useState([]);
     const [phrases, setPhrases] = useState([]);
 
-    // Sincronización Real-time con Firebase
+    // Manejo de Autenticación y Autorización
     useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setAuthLoading(true);
+            if (currentUser) {
+                // Verificar Whitelist
+                try {
+                    const userDoc = await getDoc(doc(db, "authorizedUsers", currentUser.email.toLowerCase()));
+                    if (userDoc.exists()) {
+                        setUser(currentUser);
+                        setIsAuthorized(true);
+                        setAuthError(null);
+                    } else {
+                        setUser(currentUser);
+                        setIsAuthorized(false);
+                        setAuthError("Tu correo no está en la lista de colaboradores autorizados. Llama al arquitecto.");
+                        // Optionally sign out unauthorized users
+                        await signOut(auth);
+                    }
+                } catch (err) {
+                    console.error("Error verificando autorización:", err);
+                    setAuthError("Error de conexión con la base de datos de seguridad.");
+                    setIsAuthorized(false);
+                }
+            } else {
+                setUser(null);
+                setIsAuthorized(false);
+                setAuthError(null);
+            }
+            setAuthLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    // Sincronización Real-time con Firebase (Solo si está autorizado)
+    useEffect(() => {
+        if (!isAuthorized) {
+            // Clear data if not authorized
+            setRoots([]);
+            setPrefixes([]);
+            setSuffixes([]);
+            setWords([]);
+            setPhrases([]);
+            return;
+        }
+
         const unsubRoots = onSnapshot(query(collection(db, "roots"), orderBy("id", "asc")), (snapshot) => {
             setRoots(snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })));
         });
@@ -49,16 +102,39 @@ function App() {
         return () => {
             unsubRoots(); unsubPrefixes(); unsubSuffixes(); unsubWords(); unsubPhrases();
         };
-    }, []);
+    }, [isAuthorized]); // Re-run when authorization status changes
 
     const handleExport = () => {
         exportToExcel(roots, prefixes, suffixes, words, phrases);
     };
 
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            setUser(null);
+            setIsAuthorized(false);
+            setAuthError(null);
+        } catch (error) {
+            console.error("Error signing out:", error);
+        }
+    };
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center">
+                <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin text-primary"></div>
+            </div>
+        );
+    }
+
+    if (!user || !isAuthorized) {
+        return <LoginScreen error={authError} />;
+    }
+
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen animate-fade-in">
             {/* Header / Nav */}
-            <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col md:flex-row justify-between items-center gap-6 sticky top-4 z-50">
+            <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col xl:flex-row justify-between items-center gap-6 sticky top-4 z-50">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-tr from-primary to-accent rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
                         <PenTool className="text-white" size={24} />
@@ -84,11 +160,24 @@ function App() {
                     </button>
                 </nav>
 
-                <button onClick={handleExport} className="btn-primary group">
-                    <Download size={18} className="group-hover:bounce" />
-                    Exportar Registro
-                </button>
+                <div className="flex items-center gap-4">
+                    <button onClick={handleExport} className="btn-primary group !py-3">
+                        <Download size={18} className="group-hover:bounce" />
+                        Exportar
+                    </button>
+                    <div className="h-10 w-[1px] bg-white/10 hidden xl:block"></div>
+                    <div className="flex items-center gap-3 bg-white/5 p-1 pr-4 rounded-full border border-white/5">
+                        <img src={user.photoURL} alt="User" className="w-8 h-8 rounded-full border border-primary/20" />
+                        <button
+                            onClick={() => signOut(auth)}
+                            className="text-[10px] uppercase tracking-widest font-black text-text-muted hover:text-accent transition-colors"
+                        >
+                            Salir
+                        </button>
+                    </div>
+                </div>
             </header>
+            {/* ... rest of main content ... */}
 
             {/* Main Content */}
             <main className="max-w-[1800px] mx-auto p-6 md:p-12">
