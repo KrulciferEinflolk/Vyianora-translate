@@ -3,7 +3,7 @@ import { auth, googleProvider } from '../firebase';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { Shield, Sparkles, LogIn, LogOut } from 'lucide-react';
 
-export default function LoginScreen({ error: externalError }) {
+export default function LoginScreen({ error: externalError, user }) {
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState(null);
 
@@ -15,10 +15,19 @@ export default function LoginScreen({ error: externalError }) {
         } catch (err) {
             console.error("Login Error:", err);
             if (err.code === 'auth/popup-blocked') {
-                setLocalError("El navegador bloqueó la ventana emergente. Por favor, permite los popups para este sitio.");
+                setLocalError("El navegador bloqueó la ventana emergente. Por favor, permite los popups.");
             } else {
-                setLocalError("Error al iniciar sesión. Inténtalo de nuevo.");
+                setLocalError("Error al iniciar sesión.");
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        setLoading(true);
+        try {
+            await signOut(auth);
         } finally {
             setLoading(false);
         }
@@ -41,10 +50,14 @@ export default function LoginScreen({ error: externalError }) {
                 <p className="text-text-muted text-sm uppercase tracking-[0.4em] font-bold mb-10 opacity-60">Sello de Acceso</p>
 
                 <div className="space-y-6">
-                    <p className="text-white/60 text-lg font-light leading-relaxed">
-                        Este espacio sagrado está protegido. <br />
-                        Por favor, identifícate para participar.
-                    </p>
+                    <div className="space-y-2">
+                        <p className="text-white/60 text-lg font-light leading-relaxed">
+                            {user ? `Hola, ${user.displayName || 'Viajero'}.` : 'Este espacio sagrado está protegido.'}
+                        </p>
+                        <p className="text-primary text-sm font-medium">
+                            {user ? 'Tu acceso aún no ha sido activado en la whitelist.' : 'Por favor, identifícate para participar.'}
+                        </p>
+                    </div>
 
                     {displayError && (
                         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm animate-fade-in shadow-lg">
@@ -52,21 +65,37 @@ export default function LoginScreen({ error: externalError }) {
                         </div>
                     )}
 
-                    <button
-                        onClick={handleLogin}
-                        disabled={loading}
-                        className={`btn-primary w-full py-5 text-xl group relative overflow-hidden ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                        <div className="absolute inset-0 bg-white/20 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
-                        <span className="flex items-center justify-center gap-3">
-                            {loading ? (
-                                <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            ) : (
-                                <LogIn size={20} />
-                            )}
-                            {loading ? 'Conectando...' : 'Ingresar con Google'}
-                        </span>
-                    </button>
+                    {user ? (
+                        <div className="space-y-4">
+                            <button
+                                onClick={handleLogout}
+                                disabled={loading}
+                                className={`w-full py-5 rounded-2xl text-xl font-black transition-all flex items-center justify-center gap-3 border border-red-500/30 bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 ${loading ? 'opacity-50' : ''}`}
+                            >
+                                <LogOut size={20} />
+                                {loading ? 'Cerrando...' : 'Cerrar Sesión'}
+                            </button>
+                            <p className="text-[10px] text-text-muted/60 uppercase tracking-widest">
+                                Identificado como: {user.email}
+                            </p>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleLogin}
+                            disabled={loading}
+                            className={`btn-primary w-full py-5 text-xl group relative overflow-hidden active:scale-95 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <div className="absolute inset-0 bg-white/20 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
+                            <span className="flex items-center justify-center gap-3 relative z-10">
+                                {loading ? (
+                                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <LogIn size={20} />
+                                )}
+                                {loading ? 'Conectando...' : 'Ingresar con Google'}
+                            </span>
+                        </button>
+                    )}
 
                     <div className="flex items-center justify-center gap-2 text-[10px] text-text-muted/40 uppercase tracking-widest mt-8">
                         <Sparkles size={12} />
