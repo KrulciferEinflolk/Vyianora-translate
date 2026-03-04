@@ -133,7 +133,7 @@ function App() {
     return (
         <div className="min-h-screen animate-fade-in">
             {/* Header / Nav */}
-            <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col xl:flex-row justify-between items-center gap-6 sticky top-4 z-50">
+            <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col xl:flex-row justify-between items-center gap-6 sticky top-4 z-50 relative">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-tr from-primary to-accent rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-3">
                         <PenTool className="text-white" size={24} />
@@ -167,7 +167,7 @@ function App() {
                 </div>
 
                 {/* Profile Corner Menu */}
-                <div className="absolute top-6 right-10">
+                <div className="absolute top-2 right-2">
                     <div className="relative">
                         <button
                             onClick={() => setShowUserMenu(!showUserMenu)}
