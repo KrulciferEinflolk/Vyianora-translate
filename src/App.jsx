@@ -132,30 +132,6 @@ function App() {
 
     return (
         <div className="min-h-screen animate-fade-in relative">
-            {/* Floating Profile Corner */}
-            <div className="fixed top-6 right-6 z-[100]">
-                <div className="relative group">
-                    <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className={`w-16 h-16 rounded-2xl border-2 transition-all duration-300 overflow-hidden shadow-2xl
-                            ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-105' : 'border-white/20 hover:border-primary/50'}`}
-                    >
-                        <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
-                    </button>
-
-                    {showUserMenu && (
-                        <div className="absolute top-[calc(100%+12px)] right-0 flex items-center bg-black/90 backdrop-blur-3xl border border-white/10 py-3 px-6 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 min-w-[140px]">
-                            <button
-                                onClick={() => signOut(auth)}
-                                className="w-full text-xs uppercase tracking-[0.2em] font-black text-red-400 hover:text-red-300 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <LogOut size={16} />
-                                Salir
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
             {/* Header / Nav */}
             <header className="glass-card mx-4 mt-4 py-6 px-10 flex flex-col xl:flex-row justify-between items-center gap-6 sticky top-4 z-50 relative">
                 <div className="flex items-center gap-4">
@@ -183,12 +159,6 @@ function App() {
                     </button>
                 </nav>
 
-                <div className="flex items-center gap-4">
-                    <button onClick={handleExport} className="btn-primary group !py-3">
-                        <Download size={18} className="group-hover:bounce" />
-                        Exportar
-                    </button>
-                </div>
             </header>
             {/* ... rest of main content ... */}
 
@@ -240,6 +210,40 @@ function App() {
                     )}
                 </div>
             </main>
+
+            {/* Floating Action Menu (Bottom-Right) */}
+            <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4">
+                {showUserMenu && (
+                    <div className="flex flex-col gap-2 p-2 bg-black/40 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-6 duration-500">
+                        <button
+                            onClick={() => { handleExport(); setShowUserMenu(false); }}
+                            className="flex items-center gap-3 w-full px-6 py-4 rounded-2xl bg-white/5 hover:bg-primary/20 hover:text-primary transition-all group overflow-hidden relative"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <Download size={20} className="relative z-10 group-hover:bounce" />
+                            <span className="text-xs uppercase tracking-[0.2em] font-black relative z-10">Exportar Datos</span>
+                        </button>
+
+                        <div className="h-[1px] bg-white/5 mx-4"></div>
+
+                        <button
+                            onClick={handleSignOut}
+                            className="flex items-center gap-3 w-full px-6 py-4 rounded-2xl bg-white/5 hover:bg-red-500/20 hover:text-red-400 transition-all group"
+                        >
+                            <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
+                            <span className="text-xs uppercase tracking-[0.2em] font-black">Cerrar Sesión</span>
+                        </button>
+                    </div>
+                )}
+
+                <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className={`w-16 h-16 rounded-2xl border-2 transition-all duration-500 overflow-hidden shadow-2xl hover:shadow-primary/20
+                        ${showUserMenu ? 'border-primary ring-4 ring-primary/20 rotate-0 scale-110' : 'border-white/10 hover:border-primary/40 -rotate-3 hover:rotate-0'}`}
+                >
+                    <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                </button>
+            </div>
         </div>
     );
 }
