@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import RootManager from './RootManager';
 import ModifierManager from './ModifierManager';
-import { Book, Layers } from 'lucide-react';
+import CategoryManager from './CategoryManager';
+import { Book, Layers, Tag } from 'lucide-react';
 
-export default function LexiconManager({ roots, setRoots, prefixes, setPrefixes, suffixes, setSuffixes }) {
+export default function LexiconManager({ roots, setRoots, categories, prefixes, setPrefixes, suffixes, setSuffixes }) {
     const [subTab, setSubTab] = useState('roots');
 
     return (
@@ -21,16 +22,24 @@ export default function LexiconManager({ roots, setRoots, prefixes, setPrefixes,
                 >
                     <Layers size={18} /> Morfología (Prefijos/Sufijos)
                 </button>
+                <button
+                    onClick={() => setSubTab('categories')}
+                    className={`sub-nav-tab ${subTab === 'categories' ? 'active-accent' : ''}`}
+                >
+                    <Tag size={18} /> Categorías
+                </button>
             </div>
 
             <div className="animate-fade-in" key={subTab}>
                 {subTab === 'roots' ? (
-                    <RootManager roots={roots} setRoots={setRoots} />
-                ) : (
+                    <RootManager roots={roots} setRoots={setRoots} categories={categories} />
+                ) : subTab === 'modifiers' ? (
                     <ModifierManager
                         prefixes={prefixes} setPrefixes={setPrefixes}
                         suffixes={suffixes} setSuffixes={setSuffixes}
                     />
+                ) : (
+                    <CategoryManager categories={categories} />
                 )}
             </div>
         </div>

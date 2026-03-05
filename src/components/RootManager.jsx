@@ -1,33 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
 
-export default function RootManager({ roots }) {
-    const defaultCategories = ['emoción', 'guerra', 'naturaleza', 'jerarquía', 'vínculo'];
-    // Extract unique categories from db, combine with defaults
-    const [uniqueCategories, setUniqueCategories] = useState(defaultCategories);
-
-    useEffect(() => {
-        const dbCategories = (roots || []).map(r => r.category?.toLowerCase() || 'emoción');
-        const combined = [...new Set([...defaultCategories, ...dbCategories])].filter(Boolean).sort();
-        setUniqueCategories(combined);
-    }, [roots]);
-
-    const [newRoot, setNewRoot] = useState({ vyio: '', spanish: '', category: 'emoción' });
-    const [customCategory, setCustomCategory] = useState('');
-    const [isCustomCategory, setIsCustomCategory] = useState(false);
+export default function RootManager({ roots, categories }) {
+    const defaultCategory = categories && categories.length > 0 ? categories[0].name : 'emoción';
+    const [newRoot, setNewRoot] = useState({ vyio: '', spanish: '', category: defaultCategory });
 
     const addRoot = async () => {
         if (newRoot.vyio && newRoot.spanish) {
-            const finalCategory = isCustomCategory && customCategory.trim()
-                ? customCategory.trim().toLowerCase()
-                : newRoot.category;
-
-            await addDoc(collection(db, "roots"), { ...newRoot, category: finalCategory, id: Date.now() });
-            setNewRoot({ vyio: '', spanish: '', category: 'emoción' });
-            setCustomCategory('');
-            setIsCustomCategory(false);
+            await addDoc(collection(db, "roots"), { ...newRoot, id: Date.now() });
+            setNewRoot({ vyio: '', spanish: '', category: defaultCategory });
         }
     };
 
@@ -56,42 +39,19 @@ export default function RootManager({ roots }) {
                         value={newRoot.spanish}
                         onChange={e => setNewRoot({ ...newRoot, spanish: e.target.value })}
                     />
-                    {isCustomCategory ? (
-                        <div className="flex gap-2 relative">
-                            <input
-                                placeholder="Nueva categoría"
-                                className="input-field flex-1"
-                                value={customCategory}
-                                onChange={e => setCustomCategory(e.target.value)}
-                                autoFocus
-                            />
-                            <button
-                                onClick={() => { setIsCustomCategory(false); setCustomCategory(''); }}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white"
-                                title="Cancelar categoría libre"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    ) : (
-                        <select
-                            className="input-field capitalize"
-                            value={newRoot.category}
-                            onChange={e => {
-                                if (e.target.value === 'custom') {
-                                    setIsCustomCategory(true);
-                                    setNewRoot({ ...newRoot, category: 'emoción' }); // fallback
-                                } else {
-                                    setNewRoot({ ...newRoot, category: e.target.value });
-                                }
-                            }}
-                        >
-                            {uniqueCategories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                            <option value="custom" className="font-bold text-accent">+ Añadir nueva categoría...</option>
-                        </select>
-                    )}
+                    <select
+                        className="input-field capitalize"
+                        value={newRoot.category}
+                        onChange={e => setNewRoot({ ...newRoot, category: e.target.value })}
+                    >
+                        {categories && categories.length > 0 ? (
+                            categories.map(cat => (
+                                <option key={cat.firebaseId} value={cat.name}>{cat.name}</option>
+                            ))
+                        ) : (
+                            <option value="sin categoría">Sin categorías (añade una primero)</option>
+                        )}
+                    </select>
                     <button onClick={addRoot} className="btn-primary w-full mt-4 py-4 text-lg">Guardar Núcleo</button>
                 </div>
             </div>

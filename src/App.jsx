@@ -27,6 +27,7 @@ function App() {
 
     const [activeTab, setActiveTab] = useState('lexicon');
     const [roots, setRoots] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [prefixes, setPrefixes] = useState([]);
     const [suffixes, setSuffixes] = useState([]);
     const [words, setWords] = useState([]);
@@ -82,6 +83,10 @@ function App() {
             setRoots(snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })));
         });
 
+        const unsubCategories = onSnapshot(query(collection(db, "categories"), orderBy("id", "asc")), (snapshot) => {
+            setCategories(snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })));
+        });
+
         const unsubPrefixes = onSnapshot(query(collection(db, "prefixes"), orderBy("id", "asc")), (snapshot) => {
             setPrefixes(snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })));
         });
@@ -99,7 +104,7 @@ function App() {
         });
 
         return () => {
-            unsubRoots(); unsubPrefixes(); unsubSuffixes(); unsubWords(); unsubPhrases();
+            unsubRoots(); unsubCategories(); unsubPrefixes(); unsubSuffixes(); unsubWords(); unsubPhrases();
         };
     }, [isAuthorized]); // Re-run when authorization status changes
 
@@ -168,6 +173,7 @@ function App() {
                     {activeTab === 'lexicon' && (
                         <LexiconManager
                             roots={roots} setRoots={setRoots}
+                            categories={categories}
                             prefixes={prefixes} setPrefixes={setPrefixes}
                             suffixes={suffixes} setSuffixes={setSuffixes}
                         />
