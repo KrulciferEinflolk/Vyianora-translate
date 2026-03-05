@@ -21,7 +21,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const [selectedIndex, setSelectedIndex] = useState(null);
 
     // Configuration
-    const GRID_SIZE = 6;
+    const GRID_SIZE = 7;
     const STROKE_COLOR = '#8b5cf6';
     const GRID_COLOR = 'rgba(139, 92, 246, 0.1)';
     const SELECT_COLOR = '#ec4899';
@@ -90,13 +90,13 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
 
         ctx.strokeStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
         ctx.fillStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 1.8;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = isSelected ? 'rgba(236, 72, 153, 0.5)' : 'rgba(139, 92, 246, 0.5)';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = isSelected ? 'rgba(236, 72, 153, 0.4)' : 'rgba(139, 92, 246, 0.4)';
 
-        const r = cellSize * 0.45; // slightly larger relative radius for 6x6
+        const r = cellSize * 0.48;
 
         ctx.beginPath();
         switch (id) {
@@ -129,26 +129,26 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                 ctx.stroke();
                 break;
             case 'open_curve':
-                ctx.arc(0, 0, r * 1.1, Math.PI * 0.1, Math.PI * 0.9);
+                ctx.arc(0, 0, r * 1.05, Math.PI * 0.1, Math.PI * 0.9);
                 ctx.stroke();
                 break;
             case 'closed_curve':
-                ctx.arc(0, 0, r * 0.7, 0, Math.PI);
+                ctx.arc(0, 0, r * 0.65, 0, Math.PI);
                 ctx.stroke();
                 break;
             case 'angular_form':
-                ctx.moveTo(0, -r * 0.8);
-                ctx.lineTo(r * 0.8, 0);
-                ctx.lineTo(0, r * 0.8);
-                ctx.lineTo(-r * 0.8, 0);
+                ctx.moveTo(0, -r * 0.7);
+                ctx.lineTo(r * 0.7, 0);
+                ctx.lineTo(0, r * 0.7);
+                ctx.lineTo(-r * 0.7, 0);
                 ctx.closePath();
                 ctx.stroke();
                 break;
             case 'expanded_core':
-                ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2);
+                ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0, 0, r * 0.6, 0, Math.PI * 2);
+                ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2);
                 ctx.stroke();
                 break;
             default: break;
@@ -159,15 +159,14 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const handleCanvasClick = (e) => {
         if (readOnly) return;
         const rect = canvasRef.current.getBoundingClientRect();
-        const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
-        const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
+        const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+        const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
 
         const gridX = Math.floor((x / canvasRef.current.width) * GRID_SIZE);
         const gridY = Math.floor((y / canvasRef.current.height) * GRID_SIZE);
 
         if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) return;
 
-        // Check if there's already a symbol here to select it
         const existingIndex = placedSymbols.findIndex(s => s.gridX === gridX && s.gridY === gridY);
         if (existingIndex !== -1) {
             setSelectedIndex(existingIndex);
@@ -204,6 +203,12 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         });
     };
 
+    const undo = () => {
+        if (placedSymbols.length === 0) return;
+        setPlacedSymbols(prev => prev.slice(0, -1));
+        setSelectedIndex(null);
+    };
+
     const remove = () => {
         if (selectedIndex === null) return;
         setPlacedSymbols(prev => prev.filter((_, i) => i !== selectedIndex));
@@ -216,8 +221,8 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     };
 
     return (
-        <div className="flex flex-col gap-6 items-center w-full">
-            {/* Canvas on TOP */}
+        <div className="flex flex-col gap-4 items-center w-full">
+            {/* Canvas */}
             <div className="relative group mx-auto">
                 <canvas
                     ref={canvasRef}
@@ -227,61 +232,70 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                         ${readOnly ? 'border-transparent' : 'border-white/10 cursor-cell'}`}
                     onClick={handleCanvasClick}
                 />
-
                 {!readOnly && (
-                    <>
-                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            <button onClick={clear} className="p-2.5 bg-black/80 rounded-xl text-text-muted hover:text-red-400 border border-white/10 backdrop-blur-md transition-all">
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                        <div className="absolute bottom-4 left-4 text-[7px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">
-                            6x6 Grid Construction System
-                        </div>
-                    </>
+                    <div className="absolute bottom-2 left-2 text-[6px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">
+                        7x7 Ultra Construction
+                    </div>
                 )}
             </div>
 
-            {/* Controls Below */}
+            {/* Combined Horizontal Controls */}
             {!readOnly && (
-                <div className="flex flex-col md:flex-row gap-4 w-full max-w-[500px]">
-                    {/* Symbol Palette */}
-                    <div className="glass-card !p-3 grid grid-cols-5 gap-1.5 flex-1">
+                <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-[600px] glass-card !p-2">
+                    {/* Palette */}
+                    <div className="grid grid-cols-5 gap-1">
                         {SYMBOLS.map(sym => (
                             <button
                                 key={sym.id}
                                 onClick={() => setSelectedSymbol(sym)}
-                                className={`aspect-square flex flex-col items-center justify-center rounded-lg border-2 transition-all p-1
-                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
-                                title={`${sym.name}: ${sym.meaning}`}
+                                className={`w-8 h-8 flex items-center justify-center rounded-md border transition-all
+                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title={sym.name}
                             >
-                                <span className="text-lg leading-none">{sym.label}</span>
+                                <span className="text-sm font-bold">{sym.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    {/* Adjustment Controls */}
-                    {selectedIndex !== null && (
-                        <div className="glass-card !p-3 flex flex-row items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="grid grid-cols-3 gap-1">
-                                <div />
-                                <button onClick={() => move(0, -0.25)} className="p-1.5 glass-card !rounded-md hover:text-primary"><MoveUp size={14} /></button>
-                                <div />
-                                <button onClick={() => move(-0.25, 0)} className="p-1.5 glass-card !rounded-md hover:text-primary"><MoveLeft size={14} /></button>
-                                <button onClick={rotate} className="p-1.5 glass-card !rounded-md border-primary/40 text-primary hover:bg-primary/20"><RotateCw size={14} /></button>
-                                <button onClick={() => move(0.25, 0)} className="p-1.5 glass-card !rounded-md hover:text-primary"><MoveRight size={14} /></button>
-                                <div />
-                                <button onClick={() => move(0, 0.25)} className="p-1.5 glass-card !rounded-md hover:text-primary"><MoveDown size={14} /></button>
-                                <div />
+                    <div className="w-[1px] h-8 bg-white/10 mx-1 hidden sm:block" />
+
+                    {/* Editor Controls */}
+                    <div className="flex items-center gap-2 min-h-[40px]">
+                        {selectedIndex !== null ? (
+                            <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                                <div className="grid grid-cols-3 gap-0.5">
+                                    <div />
+                                    <button onClick={() => move(0, -0.25)} className="p-1 glass-card !rounded hover:text-primary"><MoveUp size={12} /></button>
+                                    <div />
+                                    <button onClick={() => move(-0.25, 0)} className="p-1 glass-card !rounded hover:text-primary"><MoveLeft size={12} /></button>
+                                    <button onClick={rotate} className="p-1 glass-card !rounded border-primary/40 text-primary bg-primary/10"><RotateCw size={12} /></button>
+                                    <button onClick={() => move(0.25, 0)} className="p-1 glass-card !rounded hover:text-primary"><MoveRight size={12} /></button>
+                                    <div />
+                                    <button onClick={() => move(0, 0.25)} className="p-1 glass-card !rounded hover:text-primary"><MoveDown size={12} /></button>
+                                    <div />
+                                </div>
+                                <button onClick={remove} className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20" title="Eliminar">
+                                    <Trash2 size={14} />
+                                </button>
                             </div>
+                        ) : (
+                            <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-40 px-2 font-bold whitespace-nowrap">
+                                Toca para editar
+                            </div>
+                        )}
+                    </div>
 
-                            <div className="h-10 w-[1px] bg-white/10" />
+                    <div className="w-[1px] h-8 bg-white/10 mx-1" />
 
-                            <button onClick={remove} className="p-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all">
-                                <Trash2 size={16} />
-                            </button>
-                        </div>
-                    )}
+                    {/* Global Actions */}
+                    <div className="flex items-center gap-1">
+                        <button onClick={undo} className="p-2 glass-card !rounded-lg text-text-muted hover:text-primary transition-all" title="Deshacer">
+                            <Undo2 size={16} />
+                        </button>
+                        <button onClick={clear} className="p-2 glass-card !rounded-lg text-text-muted hover:text-red-400 border-white/5 bg-white/5 transition-all" title="Limpiar">
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
