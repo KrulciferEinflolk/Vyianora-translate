@@ -18,7 +18,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const canvasRef = useRef(null);
     const [placedSymbols, setPlacedSymbols] = useState([]);
     const [history, setHistory] = useState([[]]);
-    const [historyStep, setHistoryStep] = useState(0);
+    const [historyIndex, setHistoryIndex] = useState(0);
     const [selectedSymbol, setSelectedSymbol] = useState(SYMBOLS[0]);
     const [selectedIndex, setSelectedIndex] = useState(null);
 
@@ -38,7 +38,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                 const data = JSON.parse(initialData);
                 setPlacedSymbols(data);
                 setHistory([data]);
-                setHistoryStep(0);
+                setHistoryIndex(0);
             } catch (e) {
                 console.error("Error parsing initial data as JSON", e);
             }
@@ -52,6 +52,32 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         }
     }, [placedSymbols, selectedIndex]);
 
+    const addToHistory = (newSymbols) => {
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newSymbols);
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+        setPlacedSymbols(newSymbols);
+    };
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            const prevIndex = historyIndex - 1;
+            setHistoryIndex(prevIndex);
+            setPlacedSymbols(history[prevIndex]);
+            setSelectedIndex(null);
+        }
+    };
+
+    const redo = () => {
+        if (historyIndex < history.length - 1) {
+            const nextIndex = historyIndex + 1;
+            setHistoryIndex(nextIndex);
+            setPlacedSymbols(history[nextIndex]);
+            setSelectedIndex(null);
+        }
+    };
+
     const renderCanvas = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -61,7 +87,6 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         const s = canvas.width;
         const cellSize = s / GRID_SIZE;
 
-        // Draw Grid if not readOnly
         if (!readOnly) {
             ctx.strokeStyle = GRID_COLOR;
             ctx.lineWidth = 1;
@@ -75,7 +100,6 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
             }
         }
 
-        // Draw Symbols
         placedSymbols.forEach((ps, index) => {
             const isSelected = index === selectedIndex && !readOnly;
             drawSymbol(ctx, ps, cellSize, isSelected);
@@ -85,14 +109,10 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const drawSymbol = (ctx, ps, cellSize, isSelected) => {
         const { id, gridX, gridY, rotation, offsetX, offsetY } = ps;
         ctx.save();
-
-        // Target center of cell
         const centerX = (gridX + 0.5) * cellSize + (offsetX * cellSize * 0.4);
         const centerY = (gridY + 0.5) * cellSize + (offsetY * cellSize * 0.4);
-
         ctx.translate(centerX, centerY);
         ctx.rotate((rotation * Math.PI) / 180);
-
         ctx.strokeStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
         ctx.fillStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
         ctx.lineWidth = 1.8;
@@ -100,72 +120,22 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         ctx.lineJoin = 'round';
         ctx.shadowBlur = 6;
         ctx.shadowColor = isSelected ? 'rgba(236, 72, 153, 0.4)' : 'rgba(139, 92, 246, 0.4)';
-
         const r = cellSize * 0.48;
-
         ctx.beginPath();
         switch (id) {
-            case 'solid_core':
-                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
-                ctx.fill();
-                break;
-            case 'empty_core':
-                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
-                ctx.stroke();
-                break;
-            case 'vertical_line':
-                ctx.moveTo(0, -cellSize * 0.5);
-                ctx.lineTo(0, cellSize * 0.5);
-                ctx.stroke();
-                break;
-            case 'horizontal_line':
-                ctx.moveTo(-cellSize * 0.5, 0);
-                ctx.lineTo(cellSize * 0.5, 0);
-                ctx.stroke();
-                break;
-            case 'diag_up':
-                ctx.moveTo(-cellSize * 0.5, cellSize * 0.5);
-                ctx.lineTo(cellSize * 0.5, -cellSize * 0.5);
-                ctx.stroke();
-                break;
-            case 'diag_down':
-                ctx.moveTo(-cellSize * 0.5, -cellSize * 0.5);
-                ctx.lineTo(cellSize * 0.5, cellSize * 0.5);
-                ctx.stroke();
-                break;
-            case 'open_curve':
-                ctx.arc(0, 0, r * 1.05, Math.PI * 0.1, Math.PI * 0.9);
-                ctx.stroke();
-                break;
-            case 'closed_curve':
-                ctx.arc(0, 0, r * 0.65, 0, Math.PI);
-                ctx.stroke();
-                break;
-            case 'angular_form':
-                ctx.moveTo(0, -r * 0.7);
-                ctx.lineTo(r * 0.7, 0);
-                ctx.lineTo(0, r * 0.7);
-                ctx.lineTo(-r * 0.7, 0);
-                ctx.closePath();
-                ctx.stroke();
-                break;
-            case 'expanded_core':
-                ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2);
-                ctx.stroke();
-                break;
+            case 'solid_core': ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2); ctx.fill(); break;
+            case 'empty_core': ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2); ctx.stroke(); break;
+            case 'vertical_line': ctx.moveTo(0, -cellSize * 0.5); ctx.lineTo(0, cellSize * 0.5); ctx.stroke(); break;
+            case 'horizontal_line': ctx.moveTo(-cellSize * 0.5, 0); ctx.lineTo(cellSize * 0.5, 0); ctx.stroke(); break;
+            case 'diag_up': ctx.moveTo(-cellSize * 0.5, cellSize * 0.5); ctx.lineTo(cellSize * 0.5, -cellSize * 0.5); ctx.stroke(); break;
+            case 'diag_down': ctx.moveTo(-cellSize * 0.5, -cellSize * 0.5); ctx.lineTo(cellSize * 0.5, cellSize * 0.5); ctx.stroke(); break;
+            case 'open_curve': ctx.arc(0, 0, r * 1.05, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke(); break;
+            case 'closed_curve': ctx.arc(0, 0, r * 0.65, 0, Math.PI); ctx.stroke(); break;
+            case 'angular_form': ctx.moveTo(0, -r * 0.7); ctx.lineTo(r * 0.7, 0); ctx.lineTo(0, r * 0.7); ctx.lineTo(-r * 0.7, 0); ctx.closePath(); ctx.stroke(); break;
+            case 'expanded_core': ctx.arc(0, 0, r * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, Math.PI * 2); ctx.stroke(); break;
             default: break;
         }
         ctx.restore();
-    };
-
-    const saveState = (newState) => {
-        const nextHistory = history.slice(0, historyStep + 1);
-        setHistory([...nextHistory, newState]);
-        setHistoryStep(nextHistory.length);
-        setPlacedSymbols(newState);
     };
 
     const handleCanvasClick = (e) => {
@@ -173,183 +143,115 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         const rect = canvasRef.current.getBoundingClientRect();
         const x = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
         const y = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
-
         const gridX = Math.floor((x / canvasRef.current.width) * GRID_SIZE);
         const gridY = Math.floor((y / canvasRef.current.height) * GRID_SIZE);
-
         if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) return;
-
         const existingIndex = placedSymbols.findIndex(s => s.gridX === gridX && s.gridY === gridY);
         if (existingIndex !== -1) {
             setSelectedIndex(existingIndex);
         } else {
-            const newSymbol = {
-                id: selectedSymbol.id,
-                gridX,
-                gridY,
-                rotation: 0,
-                offsetX: 0,
-                offsetY: 0
-            };
-            const newState = [...placedSymbols, newSymbol];
-            saveState(newState);
-            setSelectedIndex(newState.length - 1);
+            const newSymbol = { id: selectedSymbol.id, gridX, gridY, rotation: 0, offsetX: 0, offsetY: 0 };
+            addToHistory([...placedSymbols, newSymbol]);
+            setSelectedIndex(placedSymbols.length);
         }
     };
 
     const updateSelected = (updates) => {
         if (selectedIndex === null) return;
-        const newState = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, ...updates } : s);
-        setPlacedSymbols(newState);
-        // We don't save every minor move to history to avoid bloat, only snapshots if needed
+        const newSymbols = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, ...updates } : s);
+        setPlacedSymbols(newSymbols);
+        // We don't necessarily want every tiny move to be a history step, but maybe it's cleaner. 
+        // For simplicity, let's just update the current state.
     };
 
-    // Save to history AFTER modification is done (on mouse up etc would be better, but let's do simple)
-    const commitChange = () => {
-        saveState(placedSymbols);
-    };
+    // To ensure transformation steps are in history, call this on definitive action
+    const saveMoveToHistory = () => addToHistory(placedSymbols);
 
     const rotate = () => {
         if (selectedIndex === null) return;
-        const nextRot = (placedSymbols[selectedIndex].rotation + 45) % 360;
-        const newState = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, rotation: nextRot } : s);
-        saveState(newState);
+        const newRotation = (placedSymbols[selectedIndex].rotation + 45) % 360;
+        const newSymbols = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, rotation: newRotation } : s);
+        addToHistory(newSymbols);
     };
 
     const move = (dx, dy) => {
         if (selectedIndex === null) return;
         const s = placedSymbols[selectedIndex];
-        const newState = placedSymbols.map((sym, i) => i === selectedIndex ? {
-            ...sym,
-            offsetX: Math.max(-1, Math.min(1, s.offsetX + dx)),
-            offsetY: Math.max(-1, Math.min(1, s.offsetY + dy))
-        } : sym);
-        saveState(newState);
-    };
-
-    const overlayDot = () => {
-        if (selectedIndex === null) return;
-        const s = placedSymbols[selectedIndex];
-        const newDot = {
-            id: 'solid_core',
-            gridX: s.gridX,
-            gridY: s.gridY,
-            rotation: 0,
-            offsetX: s.offsetX,
-            offsetY: s.offsetY
-        };
-        const newState = [...placedSymbols, newDot];
-        saveState(newState);
-        setSelectedIndex(newState.length - 1);
-    };
-
-    const undo = () => {
-        if (historyStep > 0) {
-            setHistoryStep(historyStep - 1);
-            setPlacedSymbols(history[historyStep - 1]);
-            setSelectedIndex(null);
-        }
-    };
-
-    const redo = () => {
-        if (historyStep < history.length - 1) {
-            setHistoryStep(historyStep + 1);
-            setPlacedSymbols(history[historyStep + 1]);
-            setSelectedIndex(null);
-        }
+        const newSymbols = placedSymbols.map((val, i) => i === selectedIndex ? {
+            ...val,
+            offsetX: Math.max(-1, Math.min(1, val.offsetX + dx)),
+            offsetY: Math.max(-1, Math.min(1, val.offsetY + dy))
+        } : val);
+        setPlacedSymbols(newSymbols);
+        // Since user might click multiple times, history might get bloated. 
+        // But the user requested "redo", so let's push to history on each click for consistency.
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(newSymbols);
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
     };
 
     const remove = () => {
         if (selectedIndex === null) return;
-        const newState = placedSymbols.filter((_, i) => i !== selectedIndex);
-        saveState(newState);
+        addToHistory(placedSymbols.filter((_, i) => i !== selectedIndex));
         setSelectedIndex(null);
     };
 
+    const addDotOverlay = () => {
+        if (selectedIndex === null) return;
+        const current = placedSymbols[selectedIndex];
+        // Check if there's already a dot at this position
+        const hasDot = placedSymbols.some(s => s.gridX === current.gridX && s.gridY === current.gridY && s.id === 'solid_core');
+        if (!hasDot) {
+            addToHistory([...placedSymbols, { id: 'solid_core', gridX: current.gridX, gridY: current.gridY, rotation: 0, offsetX: 0, offsetY: 0 }]);
+        }
+    };
+
     const clear = () => {
-        saveState([]);
+        addToHistory([]);
         setSelectedIndex(null);
     };
 
     return (
         <div className="flex flex-col gap-4 items-center w-full">
-            {/* Canvas */}
             <div className="relative group mx-auto">
-                <canvas
-                    ref={canvasRef}
-                    width={size}
-                    height={size}
-                    className={`border-2 rounded-2xl bg-black/40 backdrop-blur-3xl shadow-2xl transition-all
-                        ${readOnly ? 'border-transparent' : 'border-white/10 cursor-cell'}`}
-                    onClick={handleCanvasClick}
-                />
-                {!readOnly && (
-                    <div className="absolute bottom-2 left-2 text-[6px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">
-                        7x7 Ultra Construction
-                    </div>
-                )}
+                <canvas ref={canvasRef} width={size} height={size} className={`border-2 rounded-2xl bg-black/40 backdrop-blur-3xl shadow-2xl transition-all ${readOnly ? 'border-transparent' : 'border-white/10 cursor-cell'}`} onClick={handleCanvasClick} />
+                {!readOnly && <div className="absolute bottom-2 left-2 text-[6px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">7x7 Ultra Construction</div>}
             </div>
 
-            {/* Layout refinements */}
             {!readOnly && (
-                <div className="flex flex-col sm:flex-row items-start justify-center gap-6 w-full max-w-[600px] glass-card !p-4">
-
-                    {/* Palette: 3 rows x 4 columns */}
-                    <div className="grid grid-cols-4 gap-1.5 mx-auto sm:mx-0">
-                        {/* First 8 symbols */}
-                        {SYMBOLS.slice(0, 8).map(sym => (
-                            <button
-                                key={sym.id}
-                                onClick={() => setSelectedSymbol(sym)}
-                                className={`w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all p-0
-                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
-                                title={sym.name}
-                            >
-                                <span className="text-base font-bold">{sym.label}</span>
+                <div className="flex flex-row items-start justify-center gap-4 w-full">
+                    {/* Symbol Palette 3x4 */}
+                    <div className="glass-card !p-1.5 grid grid-cols-3 gap-1 h-fit">
+                        {SYMBOLS.slice(0, 9).map(sym => (
+                            <button key={sym.id} onClick={() => setSelectedSymbol(sym)} className={`w-7 h-7 flex items-center justify-center rounded border transition-all ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/10'}`} title={sym.name}>
+                                <span className="text-xs font-bold leading-none">{sym.label}</span>
                             </button>
                         ))}
-                        {/* Last row: empty, sym9, sym10, empty */}
                         <div />
-                        {SYMBOLS.slice(8, 10).map(sym => (
-                            <button
-                                key={sym.id}
-                                onClick={() => setSelectedSymbol(sym)}
-                                className={`w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all p-0
-                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
-                                title={sym.name}
-                            >
-                                <span className="text-base font-bold">{sym.label}</span>
-                            </button>
-                        ))}
+                        <button onClick={() => setSelectedSymbol(SYMBOLS[9])} className={`w-7 h-7 flex items-center justify-center rounded border transition-all ${selectedSymbol.id === SYMBOLS[9].id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/10'}`} title={SYMBOLS[9].name}>
+                            <span className="text-xs font-bold leading-none">{SYMBOLS[9].label}</span>
+                        </button>
                         <div />
                     </div>
 
-                    <div className="w-full h-[1px] sm:w-[1px] sm:h-24 bg-white/10 my-2 sm:my-0" />
-
-                    {/* Editor Controls: 3x3 Grid */}
-                    <div className="grid grid-cols-3 gap-1.5 mx-auto sm:mx-0">
+                    {/* Controls Grid 3x3 */}
+                    <div className="glass-card !p-1.5 grid grid-cols-3 gap-1 h-fit">
                         {/* Row 1: Undo, Up, Redo */}
-                        <button onClick={undo} disabled={historyStep === 0} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-primary disabled:opacity-20"><Undo2 size={16} /></button>
-                        <button onClick={() => move(0, -0.25)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveUp size={16} /></button>
-                        <button onClick={redo} disabled={historyStep === history.length - 1} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-primary disabled:opacity-20"><Redo2 size={16} /></button>
+                        <button onClick={undo} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all" title="Deshacer"><Undo2 size={12} /></button>
+                        <button onClick={() => move(0, -0.25)} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all"><MoveUp size={12} /></button>
+                        <button onClick={redo} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all" title="Reventar/Rehacer"><Redo2 size={12} /></button>
 
                         {/* Row 2: Left, Rotate, Right */}
-                        <button onClick={() => move(-0.25, 0)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveLeft size={16} /></button>
-                        <button onClick={rotate} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg border-primary/40 text-primary bg-primary/10"><RotateCw size={16} /></button>
-                        <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveRight size={16} /></button>
+                        <button onClick={() => move(-0.25, 0)} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all"><MoveLeft size={12} /></button>
+                        <button onClick={rotate} className="w-7 h-7 flex items-center justify-center rounded border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold"><RotateCw size={12} /></button>
+                        <button onClick={() => move(0.25, 0)} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all"><MoveRight size={12} /></button>
 
-                        {/* Row 3: Delete, Down, Overlay Dot */}
-                        <button onClick={remove} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-red-400 hover:bg-red-500/10 border-red-500/20"><Trash2 size={16} /></button>
-                        <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveDown size={16} /></button>
-                        <button onClick={overlayDot} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-accent hover:bg-accent/10 border-accent/20" title="Superponer •"><Circle size={10} fill="currentColor" /></button>
+                        {/* Row 3: Delete, Down, Dot */}
+                        <button onClick={remove} className="w-7 h-7 flex items-center justify-center rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all" title="Borrar"><Trash2 size={12} /></button>
+                        <button onClick={() => move(0, 0.25)} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all"><MoveDown size={12} /></button>
+                        <button onClick={addDotOverlay} className="w-7 h-7 flex items-center justify-center rounded bg-white/5 hover:text-primary transition-all" title="Superponer núcleo"><Circle size={10} fill="currentColor" /></button>
                     </div>
-
-                    <div className="w-full h-[1px] sm:w-[1px] sm:h-24 bg-white/10 my-2 sm:my-0" />
-
-                    {/* Clear Button (Secondary) */}
-                    <button onClick={clear} className="w-9 h-9 sm:h-auto sm:w-12 p-2 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-red-400 transition-all mx-auto sm:mx-0" title="Limpiar Todo">
-                        <Trash2 size={18} />
-                    </button>
                 </div>
             )}
         </div>
