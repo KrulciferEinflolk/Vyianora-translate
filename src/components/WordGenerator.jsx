@@ -55,12 +55,7 @@ export default function WordGenerator({ roots, prefixes, suffixes, words }) {
                                 onChange={e => setSelectedRoot(e.target.value)}
                             >
                                 <option value="">Seleccionar núcleo...</option>
-                                {roots.map(r => (
-                                    <option key={r.id} value={r.vyio}>
-                                        {(r.vyio || '').toUpperCase()} ({r.spanish})
-                                        {r.contexts ? ` | ${r.contexts.substring(0, 30)}${r.contexts.length > 30 ? '...' : ''}` : ''}
-                                    </option>
-                                ))}
+                                {roots.map(r => <option key={r.id} value={r.vyio}>{(r.vyio || '').toUpperCase()} ({r.spanish})</option>)}
                             </select>
                         </div>
 
