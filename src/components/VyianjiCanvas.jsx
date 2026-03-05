@@ -222,52 +222,56 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
 
             {/* Controls Section (Horizontal Tables) */}
             {!readOnly && (
-                <div className="flex flex-row items-center justify-center gap-8 w-full max-w-full overflow-x-auto py-4 px-2">
+                <div className="flex flex-row items-center justify-center gap-8 w-full max-w-full overflow-x-auto py-6 px-4">
                     {/* Palette Table: 3 Wide x 4 High */}
                     <div
-                        className="glass-card !p-4 border border-white/10 rounded-[2rem] shadow-2xl"
-                        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '8px' }}
+                        className="glass-card !p-5 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center"
+                        style={{ width: '164px', height: '210px' }}
                     >
-                        {SYMBOLS.slice(0, 9).map(sym => (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '10px' }}>
+                            {SYMBOLS.slice(0, 9).map(sym => (
+                                <button
+                                    key={sym.id}
+                                    onClick={() => setSelectedSymbol(sym)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary scale-95 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                    title={sym.name}
+                                >
+                                    <span className="text-base font-bold leading-none">{sym.label}</span>
+                                </button>
+                            ))}
+                            <div />
                             <button
-                                key={sym.id}
-                                onClick={() => setSelectedSymbol(sym)}
-                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary scale-95' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
-                                title={sym.name}
+                                onClick={() => setSelectedSymbol(SYMBOLS[9])}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === SYMBOLS[9].id ? 'border-primary bg-primary/20 text-primary scale-95 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title={SYMBOLS[9].name}
                             >
-                                <span className="text-base font-bold leading-none">{sym.label}</span>
+                                <span className="text-base font-bold leading-none">{SYMBOLS[9].label}</span>
                             </button>
-                        ))}
-                        <div /> {/* Spacer */}
-                        <button
-                            onClick={() => setSelectedSymbol(SYMBOLS[9])}
-                            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === SYMBOLS[9].id ? 'border-primary bg-primary/20 text-primary scale-95' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
-                            title={SYMBOLS[9].name}
-                        >
-                            <span className="text-base font-bold leading-none">{SYMBOLS[9].label}</span>
-                        </button>
-                        <div /> {/* Spacer */}
+                            <div />
+                        </div>
                     </div>
 
-                    {/* Edition Table: 3x3 Grid (Styled same as palette) */}
+                    {/* Edition Table: 3x3 Grid (Matched size) */}
                     <div
-                        className="glass-card !p-4 border border-white/10 rounded-[2rem] shadow-2xl"
-                        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '8px' }}
+                        className="glass-card !p-5 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center"
+                        style={{ width: '164px', height: '210px' }}
                     >
-                        {/* Row 1: Undo, ↑, Redo */}
-                        <button onClick={undo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Deshacer"><Undo2 size={16} /></button>
-                        <button onClick={() => move(0, -0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveUp size={16} /></button>
-                        <button onClick={redo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Rehacer"><Redo2 size={16} /></button>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '10px' }}>
+                            {/* Row 1: Undo, ↑, Redo */}
+                            <button onClick={undo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Deshacer"><Undo2 size={16} /></button>
+                            <button onClick={() => move(0, -0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveUp size={16} /></button>
+                            <button onClick={redo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Rehacer"><Redo2 size={16} /></button>
 
-                        {/* Row 2: ←, Rotate, → */}
-                        <button onClick={() => move(-0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveLeft size={16} /></button>
-                        <button onClick={rotate} className="w-9 h-9 flex items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold active:scale-95"><RotateCw size={16} /></button>
-                        <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveRight size={16} /></button>
+                            {/* Row 2: ←, Rotate, → */}
+                            <button onClick={() => move(-0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveLeft size={16} /></button>
+                            <button onClick={rotate} className="w-9 h-9 flex items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold active:scale-95"><RotateCw size={16} /></button>
+                            <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveRight size={16} /></button>
 
-                        {/* Row 3: Borrar, ↓, • Dot */}
-                        <button onClick={remove} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar"><Trash2 size={16} /></button>
-                        <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveDown size={16} /></button>
-                        <button onClick={addDotOverlay} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Superponer núcleo"><Circle size={14} fill="currentColor" /></button>
+                            {/* Row 3: Borrar, ↓, • Dot */}
+                            <button onClick={remove} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar"><Trash2 size={16} /></button>
+                            <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveDown size={16} /></button>
+                            <button onClick={addDotOverlay} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Superponer núcleo"><Circle size={14} fill="currentColor" /></button>
+                        </div>
                     </div>
                 </div>
             )}
