@@ -28,7 +28,6 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const STROKE_COLOR = '#8b5cf6';
     const GRID_COLOR = 'rgba(139, 92, 246, 0.1)';
     const SELECT_COLOR = '#ec4899';
-    const LAYER2_COLOR = '#3b82f6'; // Blue for layer 2
 
     useEffect(() => {
         if (clearSignal) clear();
@@ -37,7 +36,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     useEffect(() => {
         if (initialData && typeof initialData === 'string' && initialData.startsWith('[')) {
             try {
-                const data = JSON.parse(initialData).map(s => ({ ...s, layer: s.layer || 1 })); // Ensure layer property exists
+                const data = JSON.parse(initialData).map(s => ({ ...s, layer: s.layer || 1 }));
                 setPlacedSymbols(data);
                 setHistory([data]);
                 setHistoryIndex(0);
@@ -52,7 +51,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         if (!readOnly) {
             onExport(JSON.stringify(placedSymbols));
         }
-    }, [placedSymbols, selectedIndex, activeLayer]);
+    }, [placedSymbols, selectedIndex]);
 
     const addToHistory = (newSymbols) => {
         const newHistory = history.slice(0, historyIndex + 1);
@@ -102,38 +101,31 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
             }
         }
 
-        // Draw Layer 1, then Layer 2
-        [1, 2].forEach(layerNum => {
-            placedSymbols.forEach((ps, index) => {
-                if (ps.layer === layerNum) {
-                    const isSelected = index === selectedIndex && !readOnly;
-                    const isActiveLayer = layerNum === activeLayer;
-                    drawSymbol(ctx, ps, cellSize, isSelected, isActiveLayer);
-                }
-            });
+        placedSymbols.forEach((ps, index) => {
+            const isSelected = index === selectedIndex && !readOnly;
+            const isInactiveLayer = ps.layer !== activeLayer;
+            drawSymbol(ctx, ps, cellSize, isSelected, isInactiveLayer);
         });
     };
 
-    const drawSymbol = (ctx, ps, cellSize, isSelected, isActiveLayer) => {
-        const { id, gridX, gridY, rotation, offsetX, offsetY, layer } = ps;
+    const drawSymbol = (ctx, ps, cellSize, isSelected, isInactiveLayer) => {
+        const { id, gridX, gridY, rotation, offsetX, offsetY } = ps;
         ctx.save();
         const centerX = (gridX + 0.5) * cellSize + (offsetX * cellSize * 0.4);
         const centerY = (gridY + 0.5) * cellSize + (offsetY * cellSize * 0.4);
         ctx.translate(centerX, centerY);
         ctx.rotate((rotation * Math.PI) / 180);
 
-        let color = layer === 1 ? STROKE_COLOR : LAYER2_COLOR;
-        if (isSelected) color = SELECT_COLOR;
+        const baseColor = isInactiveLayer ? 'rgba(139, 92, 246, 0.2)' : STROKE_COLOR;
+        const selectColor = isInactiveLayer ? 'rgba(236, 72, 153, 0.2)' : SELECT_COLOR;
 
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
+        ctx.strokeStyle = isSelected ? selectColor : baseColor;
+        ctx.fillStyle = isSelected ? selectColor : baseColor;
         ctx.lineWidth = 1.8;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.globalAlpha = isActiveLayer ? 1 : 0.4;
-        ctx.shadowBlur = isSelected ? 8 : 4;
-        ctx.shadowColor = color + '66';
-
+        ctx.shadowBlur = isInactiveLayer ? 0 : 6;
+        ctx.shadowColor = isSelected ? 'rgba(236, 72, 153, 0.4)' : 'rgba(139, 92, 246, 0.4)';
         const r = cellSize * 0.48;
         ctx.beginPath();
         switch (id) {
@@ -161,9 +153,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         const gridY = Math.floor((y / canvasRef.current.height) * GRID_SIZE);
         if (gridX < 0 || gridX >= GRID_SIZE || gridY < 0 || gridY >= GRID_SIZE) return;
 
-        // Find existing symbol ON THE ACTIVE LAYER
         const existingIndex = placedSymbols.findIndex(s => s.gridX === gridX && s.gridY === gridY && s.layer === activeLayer);
-
         if (existingIndex !== -1) {
             setSelectedIndex(existingIndex);
         } else {
@@ -186,22 +176,19 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
 
     const rotate = () => {
         if (selectedIndex === null) return;
-        const target = placedSymbols[selectedIndex];
-        if (target.layer !== activeLayer) return; // Only edit active layer
-        const newRotation = (target.rotation + 45) % 360;
+        const newRotation = (placedSymbols[selectedIndex].rotation + 45) % 360;
         const newSymbols = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, rotation: newRotation } : s);
         addToHistory(newSymbols);
     };
 
     const move = (dx, dy) => {
         if (selectedIndex === null) return;
-        const target = placedSymbols[selectedIndex];
-        if (target.layer !== activeLayer) return;
-        const newSymbols = placedSymbols.map((s, i) => i === selectedIndex ? {
-            ...s,
-            offsetX: Math.max(-1, Math.min(1, s.offsetX + dx)),
-            offsetY: Math.max(-1, Math.min(1, s.offsetY + dy))
-        } : s);
+        const s = placedSymbols[selectedIndex];
+        const newSymbols = placedSymbols.map((val, i) => i === selectedIndex ? {
+            ...val,
+            offsetX: Math.max(-1, Math.min(1, val.offsetX + dx)),
+            offsetY: Math.max(-1, Math.min(1, val.offsetY + dy))
+        } : val);
         setPlacedSymbols(newSymbols);
         // Since user might click multiple times, history might get bloated. 
         // But the user requested "redo", so let's push to history on each click for consistency.
@@ -213,8 +200,6 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
 
     const remove = () => {
         if (selectedIndex === null) return;
-        const target = placedSymbols[selectedIndex];
-        if (target.layer !== activeLayer) return;
         addToHistory(placedSymbols.filter((_, i) => i !== selectedIndex));
         setSelectedIndex(null);
     };
@@ -222,6 +207,7 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     const addDotOverlay = () => {
         if (selectedIndex === null) return;
         const current = placedSymbols[selectedIndex];
+        // Check if there's already a dot at this position in the active layer
         const hasDot = placedSymbols.some(s => s.gridX === current.gridX && s.gridY === current.gridY && s.id === 'solid_core' && s.layer === activeLayer);
         if (!hasDot) {
             addToHistory([...placedSymbols, { id: 'solid_core', gridX: current.gridX, gridY: current.gridY, rotation: 0, offsetX: 0, offsetY: 0, layer: activeLayer }]);
@@ -238,76 +224,72 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
             {/* Canvas Section */}
             <div className="relative group mx-auto">
                 <canvas ref={canvasRef} width={size} height={size} className={`border-2 rounded-2xl bg-black/40 backdrop-blur-3xl shadow-2xl transition-all ${readOnly ? 'border-transparent' : 'border-white/10 cursor-cell'}`} onClick={handleCanvasClick} />
-                {!readOnly && (
-                    <div className="absolute top-2 right-2 flex gap-2">
-                        <div className={`text-[8px] px-2 py-0.5 rounded-full border ${activeLayer === 1 ? 'border-primary bg-primary/20 text-primary' : 'border-white/10 text-white/40'}`}>LAYER 1</div>
-                        <div className={`text-[8px] px-2 py-0.5 rounded-full border ${activeLayer === 2 ? 'border-blue-500 bg-blue-500/20 text-blue-400' : 'border-white/10 text-white/40'}`}>LAYER 2</div>
-                    </div>
-                )}
-                {!readOnly && <div className="absolute bottom-2 left-2 text-[6px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">Layered Construction</div>}
+                {!readOnly && <div className="absolute bottom-2 left-2 text-[6px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">7x7 Ultra Construction</div>}
             </div>
 
             {/* Controls Section (Horizontal Tables) */}
             {!readOnly && (
                 <div className="flex flex-row items-center justify-center gap-8 w-full max-w-full overflow-x-auto py-6 px-4">
-                    {/* Palette Table: 3 Wide x 10 High */}
+                    {/* Palette Table: 3 Wide x 4 High */}
                     <div
-                        className="glass-card !p-5 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center overflow-y-auto"
-                        style={{ width: '180px', height: '480px' }}
+                        className="glass-card !p-5 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center"
+                        style={{ width: '164px', height: '210px' }}
                     >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 40px)', gap: '12px' }}>
-                            {SYMBOLS.map((sym, idx) => (
-                                <React.Fragment key={sym.id}>
-                                    {/* Column 1: Layer 1 Selector */}
-                                    <button
-                                        onClick={() => setActiveLayer(1)}
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border text-[10px] font-black ${activeLayer === 1 ? 'border-primary bg-primary/20 text-primary shadow-lg scale-95' : 'border-white/5 bg-white/5 text-white/40'}`}
-                                    >1</button>
-
-                                    {/* Column 2: The Symbol */}
-                                    <button
-                                        onClick={() => setSelectedSymbol(sym)}
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === sym.id ? 'border-white/40 bg-white/20 text-white' : 'border-white/5 bg-white/5 text-white/60 hover:border-white/20'}`}
-                                        title={sym.name}
-                                    >
-                                        <span className="text-lg font-bold">{sym.label}</span>
-                                    </button>
-
-                                    {/* Column 3: Layer 2 Selector */}
-                                    <button
-                                        onClick={() => setActiveLayer(2)}
-                                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all border text-[10px] font-black ${activeLayer === 2 ? 'border-blue-500 bg-blue-500/20 text-blue-400 shadow-lg scale-95' : 'border-white/5 bg-white/5 text-white/40'}`}
-                                    >2</button>
-                                </React.Fragment>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '10px' }}>
+                            {SYMBOLS.slice(0, 9).map(sym => (
+                                <button
+                                    key={sym.id}
+                                    onClick={() => setSelectedSymbol(sym)}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary scale-95 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                    title={sym.name}
+                                >
+                                    <span className="text-base font-bold leading-none">{sym.label}</span>
+                                </button>
                             ))}
+                            <button
+                                onClick={() => { setActiveLayer(1); setSelectedIndex(null); }}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${activeLayer === 1 ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title="Capa 1"
+                            >
+                                <span className="text-xs font-black">L1</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedSymbol(SYMBOLS[9])}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${selectedSymbol.id === SYMBOLS[9].id ? 'border-primary bg-primary/20 text-primary scale-95 shadow-[0_0_15px_rgba(139,92,246,0.3)]' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title={SYMBOLS[9].name}
+                            >
+                                <span className="text-base font-bold leading-none">{SYMBOLS[9].label}</span>
+                            </button>
+                            <button
+                                onClick={() => { setActiveLayer(2); setSelectedIndex(null); }}
+                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${activeLayer === 2 ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title="Capa 2"
+                            >
+                                <span className="text-xs font-black">L2</span>
+                            </button>
                         </div>
                     </div>
 
                     {/* Edition Table: 3x3 Grid (Matched size) */}
                     <div
                         className="glass-card !p-5 border border-white/10 rounded-[2.5rem] shadow-2xl flex flex-col justify-center items-center"
-                        style={{ width: '180px', height: '480px' }}
+                        style={{ width: '164px', height: '210px' }}
                     >
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 44px)', gap: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 36px)', gap: '10px' }}>
                             {/* Row 1: Undo, ↑, Redo */}
-                            <button onClick={undo} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Deshacer"><Undo2 size={18} /></button>
-                            <button onClick={() => move(0, -0.25)} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveUp size={18} /></button>
-                            <button onClick={redo} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Rehacer"><Redo2 size={18} /></button>
+                            <button onClick={undo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Deshacer"><Undo2 size={16} /></button>
+                            <button onClick={() => move(0, -0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveUp size={16} /></button>
+                            <button onClick={redo} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Rehacer"><Redo2 size={16} /></button>
 
                             {/* Row 2: ←, Rotate, → */}
-                            <button onClick={() => move(-0.25, 0)} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveLeft size={18} /></button>
-                            <button onClick={rotate} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold active:scale-95"><RotateCw size={18} /></button>
-                            <button onClick={() => move(0.25, 0)} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveRight size={18} /></button>
+                            <button onClick={() => move(-0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveLeft size={16} /></button>
+                            <button onClick={rotate} className="w-9 h-9 flex items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold active:scale-95"><RotateCw size={16} /></button>
+                            <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveRight size={16} /></button>
 
                             {/* Row 3: Borrar, ↓, • Dot */}
-                            <button onClick={remove} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar"><Trash2 size={18} /></button>
-                            <button onClick={() => move(0, 0.25)} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveDown size={18} /></button>
-                            <button onClick={addDotOverlay} className="w-11 h-11 flex items-center justify-center rounded-2xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Superponer núcleo"><Circle size={16} fill="currentColor" /></button>
-                        </div>
-
-                        <div className="mt-8 text-center animate-pulse">
-                            <div className="text-[10px] uppercase tracking-widest text-white/40 font-black mb-1">Editing Layer</div>
-                            <div className={`text-sm font-black tracking-widest ${activeLayer === 1 ? 'text-primary' : 'text-blue-400'}`}>0{activeLayer}</div>
+                            <button onClick={remove} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar"><Trash2 size={16} /></button>
+                            <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveDown size={16} /></button>
+                            <button onClick={addDotOverlay} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Superponer núcleo"><Circle size={14} fill="currentColor" /></button>
                         </div>
                     </div>
                 </div>
