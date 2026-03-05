@@ -165,16 +165,16 @@ function App() {
                 </div>
 
                 <nav className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
-                    <button onClick={() => setActiveTab('lexicon')} className={`nav - tab ${activeTab === 'lexicon' ? 'active' : ''} `}>
+                    <button onClick={() => setActiveTab('lexicon')} className={`nav-tab ${activeTab === 'lexicon' ? 'active' : ''}`}>
                         <Database size={18} /> Léxico
                     </button>
-                    <button onClick={() => setActiveTab('generator')} className={`nav - tab ${activeTab === 'generator' ? 'active' : ''} `}>
+                    <button onClick={() => setActiveTab('generator')} className={`nav-tab ${activeTab === 'generator' ? 'active' : ''}`}>
                         <Plus size={18} /> Generador
                     </button>
-                    <button onClick={() => setActiveTab('phrases')} className={`nav - tab ${activeTab === 'phrases' ? 'active' : ''} `}>
+                    <button onClick={() => setActiveTab('phrases')} className={`nav-tab ${activeTab === 'phrases' ? 'active' : ''}`}>
                         <MessageSquare size={18} /> Frases
                     </button>
-                    <button onClick={() => setActiveTab('canvas')} className={`nav - tab ${activeTab === 'canvas' ? 'active' : ''} `}>
+                    <button onClick={() => setActiveTab('canvas')} className={`nav-tab ${activeTab === 'canvas' ? 'active' : ''}`}>
                         <Search size={18} /> Vyianji
                     </button>
                 </nav>
