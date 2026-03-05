@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
@@ -9,7 +9,7 @@ export default function RootManager({ roots }) {
     const [uniqueCategories, setUniqueCategories] = useState(defaultCategories);
 
     useEffect(() => {
-        const dbCategories = roots.map(r => r.category?.toLowerCase() || 'emoción');
+        const dbCategories = (roots || []).map(r => r.category?.toLowerCase() || 'emoción');
         const combined = [...new Set([...defaultCategories, ...dbCategories])].filter(Boolean).sort();
         setUniqueCategories(combined);
     }, [roots]);
