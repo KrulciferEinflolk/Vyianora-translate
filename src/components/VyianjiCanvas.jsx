@@ -1,26 +1,50 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Eraser, Undo2 } from 'lucide-react';
+import { Undo2, RotateCw, MoveUp, MoveDown, MoveLeft, MoveRight, Trash2 } from 'lucide-react';
 
-export default function VyianjiCanvas({ onExport, clearSignal }) {
+const SYMBOLS = [
+    { id: 'solid_core', label: '•', name: 'Núcleo sólido', meaning: 'esencia / existencia' },
+    { id: 'empty_core', label: '◯', name: 'Núcleo vacío', meaning: 'potencial / vacío' },
+    { id: 'vertical_line', label: '│', name: 'Línea vertical', meaning: 'poder / jerarquía' },
+    { id: 'horizontal_line', label: '─', name: 'Línea horizontal', meaning: 'estabilidad / control' },
+    { id: 'diag_up', label: '╱', name: 'Diagonal ascendente', meaning: 'acción / avance' },
+    { id: 'diag_down', label: '╲', name: 'Diagonal descendente', meaning: 'consecuencia / caída' },
+    { id: 'open_curve', label: '⌒', name: 'Curva abierta', meaning: 'emoción / flujo' },
+    { id: 'closed_curve', label: '⌢', name: 'Curva cerrada', meaning: 'unión / contención' },
+    { id: 'angular_form', label: '⟡', name: 'Forma angular', meaning: 'conflicto / ruptura' },
+    { id: 'expanded_core', label: '⊙', name: 'Núcleo expandido', meaning: 'energía activa' },
+];
+
+export default function VyianjiCanvas({ onExport, clearSignal, initialData, readOnly = false, size = 300 }) {
     const canvasRef = useRef(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [points, setPoints] = useState([]);
-    const [strokes, setStrokes] = useState([]);
+    const [placedSymbols, setPlacedSymbols] = useState([]);
+    const [selectedSymbol, setSelectedSymbol] = useState(SYMBOLS[0]);
+    const [selectedIndex, setSelectedIndex] = useState(null);
 
     // Configuration
-    const BRUSH_THICKNESS = 2; // Thinner as requested
-    const GLOW_COLOR = 'rgba(139, 92, 246, 0.5)';
     const STROKE_COLOR = '#8b5cf6';
+    const GRID_COLOR = 'rgba(139, 92, 246, 0.1)';
+    const SELECT_COLOR = '#ec4899';
 
     useEffect(() => {
-        if (clearSignal) {
-            clear();
-        }
+        if (clearSignal) clear();
     }, [clearSignal]);
 
     useEffect(() => {
+        if (initialData && typeof initialData === 'string' && initialData.startsWith('[')) {
+            try {
+                setPlacedSymbols(JSON.parse(initialData));
+            } catch (e) {
+                console.error("Error parsing initial data as JSON", e);
+            }
+        }
+    }, [initialData]);
+
+    useEffect(() => {
         renderCanvas();
-    }, [strokes, points]);
+        if (!readOnly) {
+            onExport(JSON.stringify(placedSymbols));
+        }
+    }, [placedSymbols, selectedIndex]);
 
     const renderCanvas = () => {
         const canvas = canvasRef.current;
@@ -28,235 +52,241 @@ export default function VyianjiCanvas({ onExport, clearSignal }) {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Set base styles
-        ctx.strokeStyle = STROKE_COLOR;
-        ctx.lineWidth = BRUSH_THICKNESS;
+        const s = canvas.width;
+        const cellSize = s / 3;
+
+        // Draw Grid if not readOnly
+        if (!readOnly) {
+            ctx.strokeStyle = GRID_COLOR;
+            ctx.lineWidth = 1;
+            for (let i = 1; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, s);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * cellSize); ctx.lineTo(s, i * cellSize);
+                ctx.stroke();
+            }
+        }
+
+        // Draw Symbols
+        placedSymbols.forEach((ps, index) => {
+            const isSelected = index === selectedIndex && !readOnly;
+            drawSymbol(ctx, ps, cellSize, isSelected);
+        });
+    };
+
+    const drawSymbol = (ctx, ps, cellSize, isSelected) => {
+        const { id, gridX, gridY, rotation, offsetX, offsetY } = ps;
+        ctx.save();
+
+        // Target center of cell
+        const centerX = (gridX + 0.5) * cellSize + (offsetX * cellSize * 0.4);
+        const centerY = (gridY + 0.5) * cellSize + (offsetY * cellSize * 0.4);
+
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rotation * Math.PI) / 180);
+
+        ctx.strokeStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
+        ctx.fillStyle = isSelected ? SELECT_COLOR : STROKE_COLOR;
+        ctx.lineWidth = 2.5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.shadowBlur = 10;
-        ctx.shadowColor = GLOW_COLOR;
+        ctx.shadowColor = isSelected ? 'rgba(236, 72, 153, 0.5)' : 'rgba(139, 92, 246, 0.5)';
 
-        // Draw saved perfected strokes
-        strokes.forEach(stroke => {
-            drawPerfectedStroke(ctx, stroke);
-        });
+        const r = cellSize * 0.35; // base radius
 
-        // Draw current active stroke (raw)
-        if (points.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
-            }
-            ctx.stroke();
-        }
-    };
-
-    const drawPerfectedStroke = (ctx, stroke) => {
         ctx.beginPath();
-        if (stroke.type === 'line') {
-            ctx.moveTo(stroke.start.x, stroke.start.y);
-            ctx.lineTo(stroke.end.x, stroke.end.y);
-        } else if (stroke.type === 'circle') {
-            ctx.arc(stroke.center.x, stroke.center.y, stroke.radius, 0, Math.PI * 2);
-        } else if (stroke.type === 'arc') {
-            ctx.arc(stroke.center.x, stroke.center.y, stroke.radius, stroke.startAngle, stroke.endAngle);
-        } else if (stroke.type === 'diamond') {
-            const { center, width, height } = stroke;
-            ctx.moveTo(center.x, center.y - height / 2); // Top
-            ctx.lineTo(center.x + width / 2, center.y); // Right
-            ctx.lineTo(center.x, center.y + height / 2); // Bottom
-            ctx.lineTo(center.x - width / 2, center.y); // Left
-            ctx.closePath();
-        } else if (stroke.type === 'dot') {
-            ctx.arc(stroke.center.x, stroke.center.y, BRUSH_THICKNESS, 0, Math.PI * 2);
-            ctx.fill();
+        switch (id) {
+            case 'solid_core':
+                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            case 'empty_core':
+                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+            case 'vertical_line':
+                ctx.moveTo(0, -cellSize * 0.4);
+                ctx.lineTo(0, cellSize * 0.4);
+                ctx.stroke();
+                break;
+            case 'horizontal_line':
+                ctx.moveTo(-cellSize * 0.4, 0);
+                ctx.lineTo(cellSize * 0.4, 0);
+                ctx.stroke();
+                break;
+            case 'diag_up':
+                ctx.moveTo(-cellSize * 0.5, cellSize * 0.5);
+                ctx.lineTo(cellSize * 0.5, -cellSize * 0.5);
+                ctx.stroke();
+                break;
+            case 'diag_down':
+                ctx.moveTo(-cellSize * 0.5, -cellSize * 0.5);
+                ctx.lineTo(cellSize * 0.5, cellSize * 0.5);
+                ctx.stroke();
+                break;
+            case 'open_curve':
+                ctx.arc(0, 0, r * 1.2, Math.PI * 0.1, Math.PI * 0.9);
+                ctx.stroke();
+                break;
+            case 'closed_curve':
+                ctx.arc(0, 0, r * 0.8, 0, Math.PI);
+                ctx.stroke();
+                break;
+            case 'angular_form':
+                ctx.moveTo(0, -r);
+                ctx.lineTo(r, 0);
+                ctx.lineTo(0, r);
+                ctx.lineTo(-r, 0);
+                ctx.closePath();
+                ctx.stroke();
+                break;
+            case 'expanded_core':
+                ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(0, 0, r * 0.7, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+            default: break;
         }
-        ctx.stroke();
+        ctx.restore();
     };
 
-    const recognizeShape = (pts) => {
-        if (pts.length < 3) return { type: 'dot', center: pts[0] || { x: 0, y: 0 } };
+    const handleCanvasClick = (e) => {
+        if (readOnly) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        const x = (e.clientX || e.touches?.[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches?.[0].clientY) - rect.top;
 
-        const start = pts[0];
-        const end = pts[pts.length - 1];
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const gridX = Math.floor((x / canvasRef.current.width) * 3);
+        const gridY = Math.floor((y / canvasRef.current.height) * 3);
 
-        // Path length
-        let pathLength = 0;
-        const ptsX = pts.map(p => p.x);
-        const ptsY = pts.map(p => p.y);
-        const minX = Math.min(...ptsX), maxX = Math.max(...ptsX);
-        const minY = Math.min(...ptsY), maxY = Math.max(...ptsY);
-        const width = maxX - minX;
-        const height = maxY - minY;
-
-        for (let i = 1; i < pts.length; i++) {
-            pathLength += Math.sqrt(Math.pow(pts[i].x - pts[i - 1].x, 2) + Math.pow(pts[i].y - pts[i - 1].y, 2));
+        // Check if there's already a symbol here to select it
+        const existingIndex = placedSymbols.findIndex(s => s.gridX === gridX && s.gridY === gridY);
+        if (existingIndex !== -1) {
+            setSelectedIndex(existingIndex);
+        } else {
+            const newSymbol = {
+                id: selectedSymbol.id,
+                gridX,
+                gridY,
+                rotation: 0,
+                offsetX: 0,
+                offsetY: 0
+            };
+            setPlacedSymbols([...placedSymbols, newSymbol]);
+            setSelectedIndex(placedSymbols.length);
         }
-
-        // 1. Is it a Dot?
-        if (pathLength < 10) return { type: 'dot', center: start };
-
-        // 2. Is it a Line?
-        // If the path is relatively straight
-        if (dist / pathLength > 0.85) return { type: 'line', start, end };
-
-        // 3. Is it a Circle or Arc?
-        // Find rough centroid
-        const centerX = pts.reduce((sum, p) => sum + p.x, 0) / pts.length;
-        const centerY = pts.reduce((sum, p) => sum + p.y, 0) / pts.length;
-        const center = { x: centerX, y: centerY };
-
-        // Average distance to center (radius)
-        const distances = pts.map(p => Math.sqrt(Math.pow(p.x - centerX, 2) + Math.pow(p.y - centerY, 2)));
-        const avgRadius = distances.reduce((sum, d) => sum + d, 0) / distances.length;
-
-        // Variance of distances
-        const variance = distances.reduce((sum, d) => sum + Math.pow(d - avgRadius, 2), 0) / distances.length;
-        const stdDev = Math.sqrt(variance);
-
-        // If distances are consistent, it's circular
-        if (stdDev / avgRadius < 0.25) {
-            // Check if closed (Circle) vs open (Arc)
-            if (dist < avgRadius * 0.8) {
-                return { type: 'circle', center, radius: avgRadius };
-            } else {
-                let startAngle = Math.atan2(start.y - centerY, start.x - centerX);
-                let endAngle = Math.atan2(end.y - centerY, end.x - centerX);
-
-                // Calculate angular difference and handle wrapping
-                let diff = endAngle - startAngle;
-                while (diff > Math.PI) diff -= 2 * Math.PI;
-                while (diff < -Math.PI) diff += 2 * Math.PI;
-
-                const absDiff = Math.abs(diff);
-                const direction = diff >= 0 ? 1 : -1;
-
-                // Snap to 90, 180, or 270 degrees
-                let snappedDiff = 0;
-                if (Math.abs(absDiff - Math.PI / 2) < 0.5) snappedDiff = Math.PI / 2;      // 1/4 circle
-                else if (Math.abs(absDiff - Math.PI) < 0.5) snappedDiff = Math.PI;        // 2/4 circle
-                else if (Math.abs(absDiff - 1.5 * Math.PI) < 0.5) snappedDiff = 1.5 * Math.PI; // 3/4 circle
-
-                if (snappedDiff > 0) {
-                    // Snap start angle to nearest 45-degree increment for even better alignment
-                    startAngle = Math.round(startAngle / (Math.PI / 4)) * (Math.PI / 4);
-                    endAngle = startAngle + (direction * snappedDiff);
-                }
-
-                return { type: 'arc', center, radius: avgRadius, startAngle, endAngle };
-            }
-        }
-
-        // Diamond Check
-        // A diamond is a closed shape, so dist should be small relative to pathLength
-        // And it should have a somewhat square-like bounding box (width ~ height)
-        // This is a very basic heuristic, more advanced recognition would be needed for robustness
-        if (dist < pathLength * 0.3 && Math.abs(width - height) < Math.max(width, height) * 0.3) {
-            return { type: 'diamond', center, width, height };
-        }
-
-        // Default to line if nothing else fits well but is long
-        return { type: 'line', start, end };
     };
 
-    const startDrawing = (e) => {
-        const { offsetX, offsetY } = getCoords(e);
-        setPoints([{ x: offsetX, y: offsetY }]);
-        setIsDrawing(true);
+    const updateSelected = (updates) => {
+        if (selectedIndex === null) return;
+        setPlacedSymbols(prev => prev.map((s, i) => i === selectedIndex ? { ...s, ...updates } : s));
     };
 
-    const draw = (e) => {
-        if (!isDrawing) return;
-        const { offsetX, offsetY } = getCoords(e);
-        setPoints(prev => [...prev, { x: offsetX, y: offsetY }]);
+    const rotate = () => {
+        if (selectedIndex === null) return;
+        updateSelected({ rotation: (placedSymbols[selectedIndex].rotation + 45) % 360 });
     };
 
-    const stopDrawing = () => {
-        if (!isDrawing) return;
-        setIsDrawing(false);
-
-        if (points.length > 0) {
-            const perfected = recognizeShape(points);
-            const newStrokes = [...strokes, perfected];
-            setStrokes(newStrokes);
-            onExport(getCanvasDataURL(newStrokes));
-        }
-        setPoints([]);
+    const move = (dx, dy) => {
+        if (selectedIndex === null) return;
+        const s = placedSymbols[selectedIndex];
+        updateSelected({
+            offsetX: Math.max(-1, Math.min(1, s.offsetX + dx)),
+            offsetY: Math.max(-1, Math.min(1, s.offsetY + dy))
+        });
     };
 
-    const undo = () => {
-        const newStrokes = strokes.slice(0, -1);
-        setStrokes(newStrokes);
-        onExport(newStrokes.length > 0 ? getCanvasDataURL(newStrokes) : null);
+    const remove = () => {
+        if (selectedIndex === null) return;
+        setPlacedSymbols(prev => prev.filter((_, i) => i !== selectedIndex));
+        setSelectedIndex(null);
     };
 
     const clear = () => {
-        setStrokes([]);
-        setPoints([]);
-        onExport(null);
-    };
-
-    const getCanvasDataURL = (currentStrokes) => {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = 300;
-        tempCanvas.height = 300;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.strokeStyle = STROKE_COLOR;
-        ctx.lineWidth = BRUSH_THICKNESS;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = GLOW_COLOR;
-        currentStrokes.forEach(s => drawPerfectedStroke(ctx, s));
-        return tempCanvas.toDataURL();
-    };
-
-    const getCoords = (e) => {
-        const rect = canvasRef.current.getBoundingClientRect();
-        const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-        const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-        return { offsetX: clientX - rect.left, offsetY: clientY - rect.top };
+        setPlacedSymbols([]);
+        setSelectedIndex(null);
     };
 
     return (
-        <div className="relative group">
-            <canvas
-                ref={canvasRef}
-                width={300}
-                height={300}
-                className="border-2 border-border rounded-2xl bg-black cursor-crosshair touch-none shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-            />
-            <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <button
-                    onClick={undo}
-                    className="p-3 bg-black/80 rounded-xl text-text-muted hover:text-primary border border-white/10 backdrop-blur-md shadow-2xl hover:scale-110 transition-all"
-                    title="Deshacer trazo"
-                >
-                    <Undo2 size={20} />
-                </button>
-                <button
-                    onClick={clear}
-                    className="p-3 bg-black/80 rounded-xl text-text-muted hover:text-accent border border-white/10 backdrop-blur-md shadow-2xl hover:scale-110 transition-all"
-                    title="Limpiar Lienzo"
-                >
-                    <Eraser size={20} />
-                </button>
-            </div>
+        <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
+            {/* Palette & Controls */}
+            {!readOnly && (
+                <div className="flex flex-col gap-4 w-full xl:w-64 order-2 xl:order-1">
+                    <div className="glass-card !p-4 grid grid-cols-5 gap-2">
+                        {SYMBOLS.map(sym => (
+                            <button
+                                key={sym.id}
+                                onClick={() => setSelectedSymbol(sym)}
+                                className={`aspect-square flex flex-col items-center justify-center rounded-xl border-2 transition-all group
+                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/10' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title={`${sym.name}: ${sym.meaning}`}
+                            >
+                                <span className="text-xl leading-none mb-1">{sym.label}</span>
+                            </button>
+                        ))}
+                    </div>
 
-            {/* Helpful Indicator */}
-            <div className="absolute bottom-4 left-4 text-[10px] text-text-muted/30 uppercase tracking-[0.2em] font-black pointer-events-none">
-                Estilete Inteligente: Line/Circle/Arc/Diamond Corregido
+                    <div className="glass-card !p-6 space-y-4">
+                        <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold opacity-60">
+                            {selectedSymbol.name}
+                        </div>
+                        <div className="text-sm italic text-primary font-medium">
+                            "{selectedSymbol.meaning}"
+                        </div>
+
+                        {selectedIndex !== null && (
+                            <div className="pt-4 border-t border-white/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="flex justify-between items-center text-[10px] uppercase font-bold text-accent">
+                                    Ajustar Símbolo
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div />
+                                    <button onClick={() => move(0, -0.2)} className="p-2 glass-card hover:text-primary"><MoveUp size={16} /></button>
+                                    <div />
+                                    <button onClick={() => move(-0.2, 0)} className="p-2 glass-card hover:text-primary"><MoveLeft size={16} /></button>
+                                    <button onClick={rotate} className="p-2 glass-card border-primary/40 text-primary hover:bg-primary/20"><RotateCw size={16} /></button>
+                                    <button onClick={() => move(0.2, 0)} className="p-2 glass-card hover:text-primary"><MoveRight size={16} /></button>
+                                    <div />
+                                    <button onClick={() => move(0, 0.2)} className="p-2 glass-card hover:text-primary"><MoveDown size={16} /></button>
+                                    <div />
+                                </div>
+                                <button onClick={remove} className="w-full py-3 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-all flex items-center justify-center gap-2 text-xs uppercase font-black tracking-widest">
+                                    <Trash2 size={14} /> Eliminar
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Canvas */}
+            <div className="relative group order-1 xl:order-2 mx-auto">
+                <canvas
+                    ref={canvasRef}
+                    width={size}
+                    height={size}
+                    className={`border-2 rounded-2xl bg-black/40 backdrop-blur-3xl shadow-2xl transition-all
+                        ${readOnly ? 'border-transparent' : 'border-white/10 cursor-cell'}`}
+                    onClick={handleCanvasClick}
+                />
+
+                {!readOnly && (
+                    <>
+                        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                            <button onClick={clear} className="p-3 bg-black/80 rounded-xl text-text-muted hover:text-red-400 border border-white/10 backdrop-blur-md transition-all">
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                        <div className="absolute bottom-4 left-4 text-[8px] text-white/20 uppercase tracking-[0.2em] font-black pointer-events-none">
+                            Grid Construction System 2.0
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
