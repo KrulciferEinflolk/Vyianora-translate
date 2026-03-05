@@ -51,7 +51,7 @@ function App() {
                     } else {
                         setUser(currentUser);
                         setIsAuthorized(false);
-                        setAuthError(`El correo ${currentUser.email} no está autorizado. Pide permiso al administrador.`);
+                        setAuthError(`El correo ${currentUser.email} no está autorizado.Pide permiso al administrador.`);
                     }
                 } catch (err) {
                     console.error("Error verificando autorización:", err);
@@ -126,7 +126,7 @@ function App() {
     };
 
     const removeGlyph = async (firebaseId, vyio) => {
-        if (window.confirm(`¿Seguro que deseas eliminar el glifo Vyianji de la palabra "${vyio}"? La palabra no se borrará del diccionario.`)) {
+        if (window.confirm(`¿Seguro que deseas eliminar el glifo Vyianji de la palabra "${vyio}" ? La palabra no se borrará del diccionario.`)) {
             try {
                 await updateDoc(doc(db, "words", firebaseId), {
                     canvasData: deleteField()
@@ -165,16 +165,16 @@ function App() {
                 </div>
 
                 <nav className="flex items-center gap-2 bg-black/20 p-1.5 rounded-2xl border border-white/5">
-                    <button onClick={() => setActiveTab('lexicon')} className={`nav-tab ${activeTab === 'lexicon' ? 'active' : ''}`}>
+                    <button onClick={() => setActiveTab('lexicon')} className={`nav - tab ${activeTab === 'lexicon' ? 'active' : ''} `}>
                         <Database size={18} /> Léxico
                     </button>
-                    <button onClick={() => setActiveTab('generator')} className={`nav-tab ${activeTab === 'generator' ? 'active' : ''}`}>
+                    <button onClick={() => setActiveTab('generator')} className={`nav - tab ${activeTab === 'generator' ? 'active' : ''} `}>
                         <Plus size={18} /> Generador
                     </button>
-                    <button onClick={() => setActiveTab('phrases')} className={`nav-tab ${activeTab === 'phrases' ? 'active' : ''}`}>
+                    <button onClick={() => setActiveTab('phrases')} className={`nav - tab ${activeTab === 'phrases' ? 'active' : ''} `}>
                         <MessageSquare size={18} /> Frases
                     </button>
-                    <button onClick={() => setActiveTab('canvas')} className={`nav-tab ${activeTab === 'canvas' ? 'active' : ''}`}>
+                    <button onClick={() => setActiveTab('canvas')} className={`nav - tab ${activeTab === 'canvas' ? 'active' : ''} `}>
                         <Search size={18} /> Vyianji
                     </button>
                 </nav>
@@ -208,7 +208,7 @@ function App() {
                     {activeTab === 'canvas' && (
                         <div className="glass-card flex flex-col items-center">
                             <h2 className="text-4xl font-black mb-10 gradient-text font-heading">Biblioteca de Glifos</h2>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 w-full">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-8 w-full max-w-6xl mx-auto">
                                 {words.filter(w => w.canvasData).map(word => (
                                     <div key={word.id} className="library-card group">
                                         <div className="aspect-square mb-4 bg-black/40 rounded-3xl p-4 border border-white/5 flex items-center justify-center relative overflow-hidden">
@@ -266,8 +266,8 @@ function App() {
 
                 <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className={`w-16 h-16 rounded-full border-2 transition-all duration-500 overflow-hidden shadow-2xl hover:shadow-primary/40 active:scale-90
-                        ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-white/10 hover:border-primary/60'}`}
+                    className={`w - 16 h - 16 rounded - full border - 2 transition - all duration - 500 overflow - hidden shadow - 2xl hover: shadow - primary / 40 active: scale - 90
+                        ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-white/10 hover:border-primary/60'} `}
                 >
                     <img src={user.photoURL} alt="User" className="w-full h-full object-cover rounded-full" />
                 </button>
