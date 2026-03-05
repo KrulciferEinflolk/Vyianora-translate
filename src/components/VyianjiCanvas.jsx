@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Undo2, Redo2, RotateCw, MoveUp, MoveDown, MoveLeft, MoveRight, Trash2, Circle } from 'lucide-react';
+import { Undo2, Redo2, RotateCw, MoveUp, MoveDown, MoveLeft, MoveRight, Trash2, Circle, Eraser } from 'lucide-react';
 
 const SYMBOLS = [
     { id: 'solid_core', label: '•', name: 'Núcleo sólido', meaning: 'esencia / existencia' },
@@ -286,10 +286,10 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                             <button onClick={rotate} className="w-9 h-9 flex items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all font-bold active:scale-95"><RotateCw size={16} /></button>
                             <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveRight size={16} /></button>
 
-                            {/* Row 3: Borrar, ↓, • Dot */}
-                            <button onClick={remove} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar"><Trash2 size={16} /></button>
+                            {/* Row 3: Borrar, ↓, Limpiar Todo */}
+                            <button onClick={remove} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Borrar símbolo"><Eraser size={16} /></button>
                             <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95"><MoveDown size={16} /></button>
-                            <button onClick={addDotOverlay} className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 hover:text-primary transition-all active:scale-95" title="Superponer núcleo"><Circle size={14} fill="currentColor" /></button>
+                            <button onClick={clear} className="w-9 h-9 flex items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all active:scale-95" title="Limpiar todo"><Trash2 size={16} /></button>
                         </div>
                     </div>
                 </div>
