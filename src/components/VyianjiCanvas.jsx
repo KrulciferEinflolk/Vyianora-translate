@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Undo2, RotateCw, MoveUp, MoveDown, MoveLeft, MoveRight, Trash2 } from 'lucide-react';
+import { Undo2, Redo2, RotateCw, MoveUp, MoveDown, MoveLeft, MoveRight, Trash2, Circle } from 'lucide-react';
 
 const SYMBOLS = [
     { id: 'solid_core', label: '•', name: 'Núcleo sólido', meaning: 'esencia / existencia' },
@@ -17,6 +17,8 @@ const SYMBOLS = [
 export default function VyianjiCanvas({ onExport, clearSignal, initialData, readOnly = false, size = 300 }) {
     const canvasRef = useRef(null);
     const [placedSymbols, setPlacedSymbols] = useState([]);
+    const [history, setHistory] = useState([[]]);
+    const [historyStep, setHistoryStep] = useState(0);
     const [selectedSymbol, setSelectedSymbol] = useState(SYMBOLS[0]);
     const [selectedIndex, setSelectedIndex] = useState(null);
 
@@ -33,7 +35,10 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
     useEffect(() => {
         if (initialData && typeof initialData === 'string' && initialData.startsWith('[')) {
             try {
-                setPlacedSymbols(JSON.parse(initialData));
+                const data = JSON.parse(initialData);
+                setPlacedSymbols(data);
+                setHistory([data]);
+                setHistoryStep(0);
             } catch (e) {
                 console.error("Error parsing initial data as JSON", e);
             }
@@ -156,6 +161,13 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
         ctx.restore();
     };
 
+    const saveState = (newState) => {
+        const nextHistory = history.slice(0, historyStep + 1);
+        setHistory([...nextHistory, newState]);
+        setHistoryStep(nextHistory.length);
+        setPlacedSymbols(newState);
+    };
+
     const handleCanvasClick = (e) => {
         if (readOnly) return;
         const rect = canvasRef.current.getBoundingClientRect();
@@ -179,44 +191,83 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                 offsetX: 0,
                 offsetY: 0
             };
-            setPlacedSymbols([...placedSymbols, newSymbol]);
-            setSelectedIndex(placedSymbols.length);
+            const newState = [...placedSymbols, newSymbol];
+            saveState(newState);
+            setSelectedIndex(newState.length - 1);
         }
     };
 
     const updateSelected = (updates) => {
         if (selectedIndex === null) return;
-        setPlacedSymbols(prev => prev.map((s, i) => i === selectedIndex ? { ...s, ...updates } : s));
+        const newState = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, ...updates } : s);
+        setPlacedSymbols(newState);
+        // We don't save every minor move to history to avoid bloat, only snapshots if needed
+    };
+
+    // Save to history AFTER modification is done (on mouse up etc would be better, but let's do simple)
+    const commitChange = () => {
+        saveState(placedSymbols);
     };
 
     const rotate = () => {
         if (selectedIndex === null) return;
-        updateSelected({ rotation: (placedSymbols[selectedIndex].rotation + 45) % 360 });
+        const nextRot = (placedSymbols[selectedIndex].rotation + 45) % 360;
+        const newState = placedSymbols.map((s, i) => i === selectedIndex ? { ...s, rotation: nextRot } : s);
+        saveState(newState);
     };
 
     const move = (dx, dy) => {
         if (selectedIndex === null) return;
         const s = placedSymbols[selectedIndex];
-        updateSelected({
+        const newState = placedSymbols.map((sym, i) => i === selectedIndex ? {
+            ...sym,
             offsetX: Math.max(-1, Math.min(1, s.offsetX + dx)),
             offsetY: Math.max(-1, Math.min(1, s.offsetY + dy))
-        });
+        } : sym);
+        saveState(newState);
+    };
+
+    const overlayDot = () => {
+        if (selectedIndex === null) return;
+        const s = placedSymbols[selectedIndex];
+        const newDot = {
+            id: 'solid_core',
+            gridX: s.gridX,
+            gridY: s.gridY,
+            rotation: 0,
+            offsetX: s.offsetX,
+            offsetY: s.offsetY
+        };
+        const newState = [...placedSymbols, newDot];
+        saveState(newState);
+        setSelectedIndex(newState.length - 1);
     };
 
     const undo = () => {
-        if (placedSymbols.length === 0) return;
-        setPlacedSymbols(prev => prev.slice(0, -1));
-        setSelectedIndex(null);
+        if (historyStep > 0) {
+            setHistoryStep(historyStep - 1);
+            setPlacedSymbols(history[historyStep - 1]);
+            setSelectedIndex(null);
+        }
+    };
+
+    const redo = () => {
+        if (historyStep < history.length - 1) {
+            setHistoryStep(historyStep + 1);
+            setPlacedSymbols(history[historyStep + 1]);
+            setSelectedIndex(null);
+        }
     };
 
     const remove = () => {
         if (selectedIndex === null) return;
-        setPlacedSymbols(prev => prev.filter((_, i) => i !== selectedIndex));
+        const newState = placedSymbols.filter((_, i) => i !== selectedIndex);
+        saveState(newState);
         setSelectedIndex(null);
     };
 
     const clear = () => {
-        setPlacedSymbols([]);
+        saveState([]);
         setSelectedIndex(null);
     };
 
@@ -239,63 +290,66 @@ export default function VyianjiCanvas({ onExport, clearSignal, initialData, read
                 )}
             </div>
 
-            {/* Combined Horizontal Controls */}
+            {/* Layout refinements */}
             {!readOnly && (
-                <div className="flex flex-wrap items-center justify-center gap-3 w-full max-w-[600px] glass-card !p-2">
-                    {/* Palette */}
-                    <div className="grid grid-cols-5 gap-1">
-                        {SYMBOLS.map(sym => (
+                <div className="flex flex-col sm:flex-row items-start justify-center gap-6 w-full max-w-[600px] glass-card !p-4">
+
+                    {/* Palette: 3 rows x 4 columns */}
+                    <div className="grid grid-cols-4 gap-1.5 mx-auto sm:mx-0">
+                        {/* First 8 symbols */}
+                        {SYMBOLS.slice(0, 8).map(sym => (
                             <button
                                 key={sym.id}
                                 onClick={() => setSelectedSymbol(sym)}
-                                className={`w-8 h-8 flex items-center justify-center rounded-md border transition-all
+                                className={`w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all p-0
                                     ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
                                 title={sym.name}
                             >
-                                <span className="text-sm font-bold">{sym.label}</span>
+                                <span className="text-base font-bold">{sym.label}</span>
                             </button>
                         ))}
+                        {/* Last row: empty, sym9, sym10, empty */}
+                        <div />
+                        {SYMBOLS.slice(8, 10).map(sym => (
+                            <button
+                                key={sym.id}
+                                onClick={() => setSelectedSymbol(sym)}
+                                className={`w-9 h-9 flex items-center justify-center rounded-lg border-2 transition-all p-0
+                                    ${selectedSymbol.id === sym.id ? 'border-primary bg-primary/20 text-primary' : 'border-white/5 bg-white/5 hover:border-white/20'}`}
+                                title={sym.name}
+                            >
+                                <span className="text-base font-bold">{sym.label}</span>
+                            </button>
+                        ))}
+                        <div />
                     </div>
 
-                    <div className="w-[1px] h-8 bg-white/10 mx-1 hidden sm:block" />
+                    <div className="w-full h-[1px] sm:w-[1px] sm:h-24 bg-white/10 my-2 sm:my-0" />
 
-                    {/* Editor Controls */}
-                    <div className="flex items-center gap-2 min-h-[40px]">
-                        {selectedIndex !== null ? (
-                            <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
-                                <div className="grid grid-cols-3 gap-0.5">
-                                    <div />
-                                    <button onClick={() => move(0, -0.25)} className="p-1 glass-card !rounded hover:text-primary"><MoveUp size={12} /></button>
-                                    <div />
-                                    <button onClick={() => move(-0.25, 0)} className="p-1 glass-card !rounded hover:text-primary"><MoveLeft size={12} /></button>
-                                    <button onClick={rotate} className="p-1 glass-card !rounded border-primary/40 text-primary bg-primary/10"><RotateCw size={12} /></button>
-                                    <button onClick={() => move(0.25, 0)} className="p-1 glass-card !rounded hover:text-primary"><MoveRight size={12} /></button>
-                                    <div />
-                                    <button onClick={() => move(0, 0.25)} className="p-1 glass-card !rounded hover:text-primary"><MoveDown size={12} /></button>
-                                    <div />
-                                </div>
-                                <button onClick={remove} className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20" title="Eliminar">
-                                    <Trash2 size={14} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="text-[9px] uppercase tracking-widest text-text-muted opacity-40 px-2 font-bold whitespace-nowrap">
-                                Toca para editar
-                            </div>
-                        )}
+                    {/* Editor Controls: 3x3 Grid */}
+                    <div className="grid grid-cols-3 gap-1.5 mx-auto sm:mx-0">
+                        {/* Row 1: Undo, Up, Redo */}
+                        <button onClick={undo} disabled={historyStep === 0} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-primary disabled:opacity-20"><Undo2 size={16} /></button>
+                        <button onClick={() => move(0, -0.25)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveUp size={16} /></button>
+                        <button onClick={redo} disabled={historyStep === history.length - 1} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-primary disabled:opacity-20"><Redo2 size={16} /></button>
+
+                        {/* Row 2: Left, Rotate, Right */}
+                        <button onClick={() => move(-0.25, 0)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveLeft size={16} /></button>
+                        <button onClick={rotate} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg border-primary/40 text-primary bg-primary/10"><RotateCw size={16} /></button>
+                        <button onClick={() => move(0.25, 0)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveRight size={16} /></button>
+
+                        {/* Row 3: Delete, Down, Overlay Dot */}
+                        <button onClick={remove} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-red-400 hover:bg-red-500/10 border-red-500/20"><Trash2 size={16} /></button>
+                        <button onClick={() => move(0, 0.25)} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg hover:text-primary"><MoveDown size={16} /></button>
+                        <button onClick={overlayDot} className="w-9 h-9 flex items-center justify-center glass-card !rounded-lg text-accent hover:bg-accent/10 border-accent/20" title="Superponer •"><Circle size={10} fill="currentColor" /></button>
                     </div>
 
-                    <div className="w-[1px] h-8 bg-white/10 mx-1" />
+                    <div className="w-full h-[1px] sm:w-[1px] sm:h-24 bg-white/10 my-2 sm:my-0" />
 
-                    {/* Global Actions */}
-                    <div className="flex items-center gap-1">
-                        <button onClick={undo} className="p-2 glass-card !rounded-lg text-text-muted hover:text-primary transition-all" title="Deshacer">
-                            <Undo2 size={16} />
-                        </button>
-                        <button onClick={clear} className="p-2 glass-card !rounded-lg text-text-muted hover:text-red-400 border-white/5 bg-white/5 transition-all" title="Limpiar">
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
+                    {/* Clear Button (Secondary) */}
+                    <button onClick={clear} className="w-9 h-9 sm:h-auto sm:w-12 p-2 flex items-center justify-center glass-card !rounded-lg text-text-muted hover:text-red-400 transition-all mx-auto sm:mx-0" title="Limpiar Todo">
+                        <Trash2 size={18} />
+                    </button>
                 </div>
             )}
         </div>
