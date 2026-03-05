@@ -266,7 +266,7 @@ function App() {
 
                 <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className={`w - 16 h - 16 rounded - full border - 2 transition - all duration - 500 overflow - hidden shadow - 2xl hover: shadow - primary / 40 active: scale - 90
+                    className={`w-16 h-16 rounded-full border-2 transition-all duration-500 overflow-hidden shadow-2xl hover:shadow-primary/40 active:scale-90
                         ${showUserMenu ? 'border-primary ring-4 ring-primary/20 scale-110' : 'border-white/10 hover:border-primary/60'} `}
                 >
                     <img src={user.photoURL} alt="User" className="w-full h-full object-cover rounded-full" />
