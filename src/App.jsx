@@ -15,7 +15,9 @@ import {
     doc,
     query,
     orderBy,
-    getDoc
+    getDoc,
+    updateDoc,
+    deleteField
 } from "firebase/firestore";
 import LoginScreen from './components/LoginScreen';
 
@@ -123,6 +125,19 @@ function App() {
         }
     };
 
+    const removeGlyph = async (firebaseId, vyio) => {
+        if (window.confirm(`¿Seguro que deseas eliminar el glifo Vyianji de la palabra "${vyio}"? La palabra no se borrará del diccionario.`)) {
+            try {
+                await updateDoc(doc(db, "words", firebaseId), {
+                    canvasData: deleteField()
+                });
+            } catch (error) {
+                console.error("Error eliminando glifo:", error);
+                alert("Error al eliminar el glifo.");
+            }
+        }
+    };
+
     if (authLoading) {
         return (
             <div className="min-h-screen bg-black flex items-center justify-center">
@@ -198,7 +213,15 @@ function App() {
                                     <div key={word.id} className="library-card group">
                                         <div className="aspect-square mb-4 bg-black/40 rounded-3xl p-4 border border-white/5 flex items-center justify-center relative overflow-hidden">
                                             <VyianjiCanvas readOnly initialData={word.canvasData} size={150} />
-                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button
+                                                    onClick={() => removeGlyph(word.firebaseId, word.vyio)}
+                                                    className="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center backdrop-blur-md transform scale-[0.8] opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 hover:bg-red-500 hover:text-white"
+                                                    title="Eliminar glifo Vyianji"
+                                                >
+                                                    <Trash2 size={24} />
+                                                </button>
+                                            </div>
                                         </div>
                                         <div className="text-center">
                                             <div className="text-primary font-black text-xl tracking-widest uppercase mb-1">{word.vyio}</div>
