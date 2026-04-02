@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Tag } from 'lucide-react';
+import { Plus, Trash2, Tag, BrainCircuit, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { generateLexiconItem } from '../services/aiAnalyzer';
 
 export default function CategoryManager({ categories }) {
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -14,6 +15,19 @@ export default function CategoryManager({ categories }) {
             });
             setNewCategoryName('');
         }
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleAutoGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            const res = await generateLexiconItem('categoria', { name: newCategoryName });
+            if (res.name) setNewCategoryName(res.name);
+        } catch (e) {
+            alert("Error en IA: " + e.message);
+        }
+        setIsGenerating(false);
     };
 
     const removeCategory = async (firebaseId, categoryName) => {
@@ -35,7 +49,12 @@ export default function CategoryManager({ categories }) {
                         value={newCategoryName}
                         onChange={e => setNewCategoryName(e.target.value.toLowerCase())}
                     />
-                    <button onClick={addCategory} className="btn-primary w-full mt-4 py-4 text-lg">Guardar Categoría</button>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={handleAutoGenerate} disabled={isGenerating} className="px-4 bg-white/5 border border-white/10 text-primary hover:bg-primary/10 rounded-2xl transition-all flex flex-col items-center justify-center gap-1">
+                            {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <BrainCircuit size={18} />} <span className="text-[10px] font-black uppercase">IA</span>
+                        </button>
+                        <button onClick={addCategory} className="btn-primary flex-1 py-4 text-lg">Guardar Categoría</button>
+                    </div>
                 </div>
             </div>
 

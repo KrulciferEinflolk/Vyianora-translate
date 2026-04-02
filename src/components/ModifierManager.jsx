@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Layers } from 'lucide-react';
+import { Plus, Trash2, Layers, BrainCircuit, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { generateLexiconItem } from '../services/aiAnalyzer';
 
 export default function ModifierManager({ prefixes, suffixes }) {
     const [newMod, setNewMod] = useState({ vyio: '', spanish: '', type: 'prefijo' });
@@ -12,6 +13,31 @@ export default function ModifierManager({ prefixes, suffixes }) {
             await addDoc(collection(db, collectionName), { ...newMod, id: Date.now() });
             setNewMod({ vyio: '', spanish: '', type: newMod.type });
         }
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleAutoGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            const types = ['prefijo', 'sufijo'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            const dataToGenerate = {
+                vyio: newMod.vyio,
+                spanish: newMod.spanish,
+                type: (!newMod.vyio && !newMod.spanish) ? randomType : newMod.type
+            };
+            const res = await generateLexiconItem('modificador', dataToGenerate);
+            setNewMod(prev => ({
+                ...prev,
+                vyio: res.vyio || prev.vyio,
+                spanish: res.spanish || prev.spanish,
+                type: dataToGenerate.type
+            }));
+        } catch (e) {
+            alert("Error en IA: " + e.message);
+        }
+        setIsGenerating(false);
     };
 
     const removeModifier = async (firebaseId, type) => {
@@ -48,7 +74,12 @@ export default function ModifierManager({ prefixes, suffixes }) {
                         value={newMod.spanish}
                         onChange={e => setNewMod({ ...newMod, spanish: e.target.value })}
                     />
-                    <button onClick={addModifier} className="btn-primary w-full mt-4 py-4 text-lg">Guardar Modificador</button>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={handleAutoGenerate} disabled={isGenerating} className="px-4 bg-white/5 border border-white/10 text-primary hover:bg-primary/10 rounded-2xl transition-all flex flex-col items-center justify-center gap-1">
+                            {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <BrainCircuit size={18} />} <span className="text-[10px] font-black uppercase">IA</span>
+                        </button>
+                        <button onClick={addModifier} className="btn-primary flex-1 py-4 text-lg">Guardar Modificador</button>
+                    </div>
                 </div>
             </div>
 

@@ -126,14 +126,12 @@ function App() {
     };
 
     const removeGlyph = async (firebaseId, vyio) => {
-        if (window.confirm(`¿Seguro que deseas eliminar el glifo Vyianji de la palabra "${vyio}" ? La palabra no se borrará del diccionario.`)) {
+        if (window.confirm(`¿Seguro que deseas eliminar completamente la palabra/morfema "${vyio}" de la base de datos? Esto la quitará de la biblioteca de frases permanentemente.`)) {
             try {
-                await updateDoc(doc(db, "words", firebaseId), {
-                    canvasData: deleteField()
-                });
+                await deleteDoc(doc(db, "words", firebaseId));
             } catch (error) {
-                console.error("Error eliminando glifo:", error);
-                alert("Error al eliminar el glifo.");
+                console.error("Error eliminando palabra:", error);
+                alert("Error al eliminar la palabra de la base de datos.");
             }
         }
     };
@@ -202,6 +200,7 @@ function App() {
                     {activeTab === 'phrases' && (
                         <PhraseGenerator
                             roots={roots} words={words}
+                            prefixes={prefixes} suffixes={suffixes}
                             phrases={phrases} setPhrases={setPhrases}
                         />
                     )}

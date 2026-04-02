@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, BrainCircuit, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { generateLexiconItem } from '../services/aiAnalyzer';
 
 export default function RootManager({ roots, categories }) {
     const defaultCategory = categories && categories.length > 0 ? categories[0].name : 'emoción';
@@ -12,6 +13,30 @@ export default function RootManager({ roots, categories }) {
             await addDoc(collection(db, "roots"), { ...newRoot, id: Date.now() });
             setNewRoot({ vyio: '', spanish: '', category: defaultCategory });
         }
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleAutoGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            const categoryNames = categories.map(c => c.name);
+            const randomCat = categoryNames[Math.floor(Math.random() * categoryNames.length)] || newRoot.category;
+            const dataToGenerate = {
+                vyio: newRoot.vyio,
+                spanish: newRoot.spanish,
+                category: (!newRoot.vyio && !newRoot.spanish) ? randomCat : newRoot.category
+            };
+            const res = await generateLexiconItem('raiz', dataToGenerate, { categoriasExistentes: categoryNames });
+            setNewRoot(prev => ({
+                vyio: res.vyio || prev.vyio,
+                spanish: res.spanish || prev.spanish,
+                category: res.category && categories.some(c => c.name === res.category) ? res.category : defaultCategory
+            }));
+        } catch (e) {
+            alert("Error en IA: " + e.message);
+        }
+        setIsGenerating(false);
     };
 
     const removeRoot = async (firebaseId) => {
@@ -52,7 +77,12 @@ export default function RootManager({ roots, categories }) {
                             <option value="sin categoría">Sin categorías (añade una primero)</option>
                         )}
                     </select>
-                    <button onClick={addRoot} className="btn-primary w-full mt-4 py-4 text-lg">Guardar Núcleo</button>
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={handleAutoGenerate} disabled={isGenerating} className="px-4 bg-white/5 border border-white/10 text-primary hover:bg-primary/10 rounded-2xl transition-all flex flex-col items-center justify-center gap-1">
+                            {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <BrainCircuit size={18} />} <span className="text-[10px] font-black uppercase">IA</span>
+                        </button>
+                        <button onClick={addRoot} className="btn-primary flex-1 py-4 text-lg">Guardar Núcleo</button>
+                    </div>
                 </div>
             </div>
 
@@ -82,6 +112,6 @@ export default function RootManager({ roots, categories }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

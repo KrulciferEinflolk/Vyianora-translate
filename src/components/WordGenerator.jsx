@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import VyianjiCanvas from './VyianjiCanvas';
-import { Save, RefreshCw, Plus } from 'lucide-react';
+import { Save, RefreshCw, Plus, BrainCircuit, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc } from "firebase/firestore";
+import { generateWordFromMeaning } from '../services/aiAnalyzer';
 
 export default function WordGenerator({ roots, prefixes, suffixes, words }) {
     const [selectedRoot, setSelectedRoot] = useState('');
@@ -36,6 +37,27 @@ export default function WordGenerator({ roots, prefixes, suffixes, words }) {
             setSpanishMeaning('');
             setCanvasData(null);
         }
+    };
+
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleAutoGenerate = async () => {
+        if (!spanishMeaning) {
+            alert("Escribe primero un significado en español para que la IA sepa qué construir.");
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const res = await generateWordFromMeaning(spanishMeaning, roots, prefixes, suffixes);
+            if (res.selectedRoot) setSelectedRoot(res.selectedRoot);
+            if (res.selectedPrefix) setSelectedPrefix(res.selectedPrefix);
+            else setSelectedPrefix('');
+            if (res.selectedSuffix) setSelectedSuffix(res.selectedSuffix);
+            else setSelectedSuffix('');
+        } catch (e) {
+            alert("Error en IA: " + e.message);
+        }
+        setIsGenerating(false);
     };
 
     return (
@@ -85,7 +107,12 @@ export default function WordGenerator({ roots, prefixes, suffixes, words }) {
                         </div>
 
                         <div>
-                            <label className="text-xs uppercase tracking-[0.2em] text-text-muted font-bold block mb-3">Significado en Español</label>
+                            <label className="text-xs uppercase tracking-[0.2em] text-text-muted font-bold block mb-3 flex justify-between items-center">
+                                <span>Significado en Español</span>
+                                <button onClick={handleAutoGenerate} disabled={isGenerating || !spanishMeaning} className="text-[10px] bg-primary/20 text-primary border border-primary/30 px-3 py-1.5 rounded-full flex items-center gap-2 hover:bg-primary/40 transition-all disabled:opacity-50">
+                                    {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <BrainCircuit size={12} />} IA AUTOCOMPLETAR
+                                </button>
+                            </label>
                             <input
                                 placeholder="Definición del nuevo concepto..."
                                 className="input-field"
