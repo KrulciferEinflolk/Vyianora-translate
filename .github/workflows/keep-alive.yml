@@ -1,0 +1,28 @@
+name: Keep AI API Active
+
+on:
+  schedule:
+    # Corre todos los días a las 06:00 UTC (12:00 AM en GMT-6, hora de México/Central)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions en GitHub
+
+jobs:
+  ping-ai:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install groq-sdk
+
+      - name: Ping AI API
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: node scripts/ping-ai.js
