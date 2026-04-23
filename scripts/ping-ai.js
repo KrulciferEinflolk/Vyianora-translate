@@ -24,6 +24,8 @@ async function ping() {
         console.error("Error: No API Key found in environment variables (GROQ_API_KEY or VITE_GROQ_API_KEY).");
         process.exit(1);
     }
+    
+    console.log(`API Key detectada: ${apiKey.substring(0, 7)}...${apiKey.substring(apiKey.length - 4)}`);
 
     const groq = new Groq({ apiKey });
 
